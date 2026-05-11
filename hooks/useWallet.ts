@@ -41,17 +41,20 @@ export function useWallet(): WalletState {
   // Listen to MetaMask events
   useEffect(() => {
     if (typeof window === 'undefined' || !window.ethereum) return;
-    const onAccountsChanged = (accounts: string[]) => {
+    const eth = window.ethereum;
+    const onAccountsChanged = (...args: unknown[]) => {
+      const accounts = args[0] as string[];
       setAddress(accounts[0] ?? null);
     };
-    const onChainChanged = (id: string) => {
+    const onChainChanged = (...args: unknown[]) => {
+      const id = args[0] as string;
       setChainId(parseInt(id, 16));
     };
-    window.ethereum.on('accountsChanged', onAccountsChanged);
-    window.ethereum.on('chainChanged', onChainChanged);
+    eth.on('accountsChanged', onAccountsChanged);
+    eth.on('chainChanged', onChainChanged);
     return () => {
-      window.ethereum.removeListener('accountsChanged', onAccountsChanged);
-      window.ethereum.removeListener('chainChanged', onChainChanged);
+      eth.removeListener('accountsChanged', onAccountsChanged);
+      eth.removeListener('chainChanged', onChainChanged);
     };
   }, []);
 
