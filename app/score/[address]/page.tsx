@@ -300,7 +300,7 @@ export default function ScorePage() {
                         </span>
                       </div>
                       <div className="col-span-4 text-right font-mono text-sm text-white">
-                        {(parseFloat(tx.value) / 1e6).toFixed(2)}
+                        {(parseFloat(tx.value) / 1e18).toFixed(2)}
                       </div>
                     </div>
                   ))}

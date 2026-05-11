@@ -72,7 +72,7 @@ export async function writeScoreOnChain(
 export const ARC_TESTNET_CONFIG = {
   chainId: `0x${CHAIN_ID.toString(16)}`,
   chainName: 'Arc Testnet',
-  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 6 },
+  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
   rpcUrls: [RPC_URL],
   blockExplorerUrls: ['https://testnet.arcscan.app'],
 };

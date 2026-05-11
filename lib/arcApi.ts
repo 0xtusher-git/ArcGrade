@@ -56,7 +56,7 @@ function parseWalletData(address: string, txs: Transaction[]): WalletData {
   const ageDays = first ? Math.floor((now - first) / 86400) : 0;
 
   const totalValue = txs.reduce((sum, t) => {
-    try { return sum + parseFloat(t.value) / 1e6; } catch { return sum; }
+    try { return sum + parseFloat(t.value) / 1e18; } catch { return sum; }
   }, 0);
   const avg = txs.length > 0 ? totalValue / txs.length : 0;
 
