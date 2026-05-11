@@ -62,14 +62,22 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const connect = useCallback(async () => {
-    if (typeof window === 'undefined' || !window.ethereum) {
+    if (typeof window !== 'undefined' && !window.ethereum) {
+      // Check if user is on mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile) {
+        // Deep link to MetaMask's internal browser
+        const dappUrl = window.location.href.replace(/^https?:\/\//, '');
+        window.location.href = `https://metamask.app.link/dapp/${dappUrl}`;
+        return;
+      }
       setError('MetaMask not found. Please install it from metamask.io');
       return;
     }
     setIsConnecting(true);
     setError(null);
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = new ethers.BrowserProvider(window.ethereum!);
       const accounts = await provider.send('eth_requestAccounts', []);
       setAddress(accounts[0]);
       const network = await provider.getNetwork();
