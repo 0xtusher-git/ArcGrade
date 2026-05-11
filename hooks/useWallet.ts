@@ -42,19 +42,17 @@ export function useWallet(): WalletState {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.ethereum) return;
     const eth = window.ethereum;
-    const onAccountsChanged = (...args: unknown[]) => {
-      const accounts = args[0] as string[];
+    const onAccountsChanged = (accounts: string[]) => {
       setAddress(accounts[0] ?? null);
     };
-    const onChainChanged = (...args: unknown[]) => {
-      const id = args[0] as string;
+    const onChainChanged = (id: string) => {
       setChainId(parseInt(id, 16));
     };
-    eth.on('accountsChanged', onAccountsChanged);
-    eth.on('chainChanged', onChainChanged);
+    eth.on('accountsChanged', onAccountsChanged as any);
+    eth.on('chainChanged', onChainChanged as any);
     return () => {
-      eth.removeListener('accountsChanged', onAccountsChanged);
-      eth.removeListener('chainChanged', onChainChanged);
+      eth.removeListener('accountsChanged', onAccountsChanged as any);
+      eth.removeListener('chainChanged', onChainChanged as any);
     };
   }, []);
 
