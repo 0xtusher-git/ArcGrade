@@ -29,11 +29,12 @@ export function useWallet(): WalletState {
   // Restore session on mount
   useEffect(() => {
     if (typeof window === 'undefined' || !window.ethereum) return;
-    window.ethereum.request({ method: 'eth_accounts' }).then((accounts: string[]) => {
-      if (accounts.length > 0) setAddress(accounts[0]);
+    window.ethereum.request({ method: 'eth_accounts' }).then((accounts) => {
+      const list = accounts as string[];
+      if (list.length > 0) setAddress(list[0]);
     });
-    window.ethereum.request({ method: 'eth_chainId' }).then((id: string) => {
-      setChainId(parseInt(id, 16));
+    window.ethereum.request({ method: 'eth_chainId' }).then((id) => {
+      setChainId(parseInt(id as string, 16));
     });
   }, []);
 
