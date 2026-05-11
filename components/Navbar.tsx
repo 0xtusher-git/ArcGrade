@@ -14,7 +14,7 @@ export default function Navbar() {
     { href: '/', label: 'Home' },
     { href: '/leaderboard', label: 'Leaderboard' },
     { href: '/my-score', label: 'My Score' },
-    { href: '/challenge', label: 'Challenge' },
+    ...(isConnected ? [{ href: '/challenge', label: 'Challenge' }] : []),
   ];
 
   return (
