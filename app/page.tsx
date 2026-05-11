@@ -196,7 +196,7 @@ export default function HomePage() {
             <path d="M6 28 Q6 8 18 8 Q30 8 30 28" stroke="#4a9aba" strokeWidth="3" fill="none" strokeLinecap="round"/>
             <circle cx="18" cy="28" r="3" fill="#4a9aba"/>
           </svg>
-          <span className="font-bold text-white">Arc<span className="text-teal-light">Trust</span></span>
+          <span className="font-bold text-white">Arc<span className="text-teal-light">Grade</span></span>
         </div>
         <p className="text-white/40 text-sm">
           Built on{' '}

@@ -71,7 +71,7 @@ export default function ScorePage() {
   const shareOnX = () => {
     if (!result) return;
     const text = encodeURIComponent(
-      `🔐 My Arc Testnet wallet trust score: ${result.score}/100 — ${result.trustLevel}\n\nCheck yours at ArcTrust 👇`
+      `🔐 My Arc Testnet wallet trust score: ${result.score}/100 — ${result.trustLevel}\n\nCheck yours at ArcGrade 👇`
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
   };
@@ -94,20 +94,20 @@ export default function ScorePage() {
       </defs>
       <rect width="800" height="450" fill="url(#bg)" rx="20"/>
       <rect x="2" y="2" width="796" height="446" fill="none" stroke="url(#accent)" stroke-width="2" rx="20" opacity="0.5"/>
-      <text x="40" y="60" font-family="Inter,sans-serif" font-size="28" font-weight="900" fill="white">Arc<tspan fill="${color}">Trust</tspan></text>
+      <text x="40" y="60" font-family="Inter,sans-serif" font-size="28" font-weight="900" fill="white">Arc<tspan fill="${color}">Grade</tspan></text>
       <text x="40" y="95" font-family="Inter,sans-serif" font-size="11" fill="rgba(255,255,255,0.4)" letter-spacing="3">TRUST CERTIFICATE</text>
       <text x="40" y="200" font-family="Inter,sans-serif" font-size="100" font-weight="900" fill="${color}">${result.score}</text>
       <text x="155" y="200" font-family="Inter,sans-serif" font-size="30" fill="rgba(255,255,255,0.4)">/100</text>
       <text x="40" y="235" font-family="Inter,sans-serif" font-size="18" fill="${color}" font-weight="600">${badge.emoji} ${result.trustLevel}</text>
       <text x="40" y="300" font-family="monospace" font-size="14" fill="rgba(255,255,255,0.5)">${address}</text>
       <text x="40" y="340" font-family="Inter,sans-serif" font-size="13" fill="rgba(255,255,255,0.4)">${result.walletData.txCount} transactions · ${result.walletData.walletAgeInDays} days old</text>
-      <text x="40" y="410" font-family="Inter,sans-serif" font-size="12" fill="rgba(255,255,255,0.25)">Verified by ArcTrust · ${new Date().toLocaleDateString()} · testnet.arcscan.app</text>
+      <text x="40" y="410" font-family="Inter,sans-serif" font-size="12" fill="rgba(255,255,255,0.25)">Verified by ArcGrade · ${new Date().toLocaleDateString()} · testnet.arcscan.app</text>
     </svg>`;
     const blob = new Blob([svg], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `arctrust-${address.slice(0, 10)}.svg`;
+    a.download = `arcgrade-${address.slice(0, 10)}.svg`;
     a.click();
   };
 

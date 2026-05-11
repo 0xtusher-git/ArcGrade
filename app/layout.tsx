@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { WalletProvider } from '@/hooks/useWallet';
 
 export const metadata: Metadata = {
   title: 'ArcGrade — AI-Powered On-Chain Reputation',
@@ -24,13 +25,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        {/* Background orbs */}
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-        <div className="relative z-10">
-          {children}
-        </div>
+        <WalletProvider>
+          {/* Background orbs */}
+          <div className="orb orb-1" />
+          <div className="orb orb-2" />
+          <div className="orb orb-3" />
+          <div className="relative z-10">
+            {children}
+          </div>
+        </WalletProvider>
       </body>
     </html>
   );
