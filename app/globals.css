@@ -119,10 +119,11 @@ body {
   .badge {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold;
   }
-  .badge-elite   { background: linear-gradient(135deg,#ffd700,#ffaa00); color:#07111e; }
-  .badge-trusted { background: linear-gradient(135deg,#00e5a0,#00b894); color:#07111e; }
-  .badge-verified{ background: linear-gradient(135deg,#4a9aba,#2d7a9a); color:white; }
-  .badge-new     { background: rgba(255,255,255,0.12); color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.15); }
+  .badge-elite     { background: linear-gradient(135deg,#ffd700,#ffaa00); color:#07111e; }
+  .badge-trusted   { background: linear-gradient(135deg,#4a9aba,#2d7a9a); color:white; }
+  .badge-neutral   { background: linear-gradient(135deg,#00e5a0,#00b894); color:#07111e; }
+  .badge-risky     { background: linear-gradient(135deg,#ff9f43,#ee5253); color:white; }
+  .badge-untrusted { background: linear-gradient(135deg,#ff6b6b,#ee5253); color:white; }
 
   /* Progress bar */
   .progress-bar {

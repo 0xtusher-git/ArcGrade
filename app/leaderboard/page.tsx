@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import { getBadge, shortenAddress } from '@/lib/scoring';
+import { useWallet } from '@/hooks/useWallet';
+import { getBadge, shortenAddress, getScoreColor } from '@/lib/scoring';
 
 interface LeaderboardEntry {
   rank: number;
@@ -17,17 +18,21 @@ export default function LeaderboardPage() {
   const [wallets, setWallets] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userRank, setUserRank] = useState<number | null>(null);
+  const { address } = useWallet();
 
   useEffect(() => {
-    fetch('/api/leaderboard')
+    const url = address ? `/api/leaderboard?address=${address}` : '/api/leaderboard';
+    fetch(url)
       .then((r) => r.json())
       .then((data) => {
         if (data.error) throw new Error(data.error);
         setWallets(data.wallets);
+        setUserRank(data.userRank);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [address]);
 
   const rankMedal = (rank: number) =>
     rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
@@ -40,9 +45,15 @@ export default function LeaderboardPage() {
         {/* Header */}
         <div className="text-center mb-12 animate-fade-in">
           <div className="section-tag mx-auto">🏆 Hall of Fame</div>
-          <h1 className="text-4xl md:text-5xl font-black text-white mb-4" style={{ letterSpacing: '-0.03em' }}>
+          <h1 className="text-4xl md:text-5xl font-black text-white mb-4">
             Top Trusted Wallets
           </h1>
+          {userRank && (
+            <div className="mb-6 inline-block glass-card px-6 py-2 border-teal-light/30">
+              <span className="text-white/60 text-sm">Your Current Position:</span>
+              <span className="ml-2 text-xl font-black text-teal-light">Rank #{userRank}</span>
+            </div>
+          )}
           <p className="text-white/60 text-lg max-w-xl mx-auto">
             The most reputable wallets on Arc Testnet, ranked by AI-verified trust score.
           </p>
@@ -122,7 +133,7 @@ export default function LeaderboardPage() {
               <div className="col-span-2 text-center">
                 <span
                   className="text-xl font-black"
-                  style={{ color: wallet.score >= 70 ? '#00e5a0' : wallet.score >= 40 ? '#ffd700' : '#ff6b6b' }}
+                  style={{ color: getScoreColor(wallet.score) }}
                 >
                   {wallet.score}
                 </span>

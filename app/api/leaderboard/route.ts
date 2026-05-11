@@ -17,17 +17,25 @@ const SEED_ADDRESSES = [
   '0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97',
 ];
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const targetAddress = searchParams.get('address')?.toLowerCase();
+
+    // Combine seed addresses with target address if provided
+    const allAddresses = [...SEED_ADDRESSES];
+    if (targetAddress && !allAddresses.map(a => a.toLowerCase()).includes(targetAddress)) {
+      allAddresses.push(targetAddress);
+    }
+
     // Fetch and score all addresses in parallel
     const results = await Promise.all(
-      SEED_ADDRESSES.map(async (addr, i) => {
+      allAddresses.map(async (addr) => {
         const data = await fetchWalletData(addr);
         const breakdown = computeScore(data);
         const badge = getBadge(breakdown.total);
         const trust = getTrustLevel(breakdown.total);
         return {
-          rank: i + 1,
           address: addr,
           score: breakdown.total,
           txCount: data.txCount,
@@ -39,9 +47,23 @@ export async function GET() {
 
     // Sort by score descending
     results.sort((a, b) => b.score - a.score);
-    results.forEach((r, i) => (r.rank = i + 1));
+    
+    // Assign ranks
+    const rankedResults = results.map((r, i) => ({
+      ...r,
+      rank: i + 1,
+    }));
 
-    return NextResponse.json({ wallets: results });
+    // Find target rank if requested
+    let targetRank = null;
+    if (targetAddress) {
+      targetRank = rankedResults.find(r => r.address.toLowerCase() === targetAddress)?.rank || null;
+    }
+
+    return NextResponse.json({ 
+      wallets: rankedResults.slice(0, 10), // Only return top 10 for display
+      userRank: targetRank
+    });
   } catch (err) {
     console.error('/api/leaderboard error:', err);
     return NextResponse.json({ error: 'Failed to load leaderboard' }, { status: 500 });

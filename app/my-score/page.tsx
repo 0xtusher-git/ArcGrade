@@ -43,19 +43,28 @@ export default function MyScorePage() {
   const { address, isConnected, isConnecting, connect, isCorrectNetwork, switchNetwork } = useWallet();
   const router = useRouter();
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [userRank, setUserRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<{ score: number; date: string }[]>([]);
 
   const analyze = async (addr: string) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: addr }),
-      });
-      const data = await res.json();
+      // Parallel fetch analysis and leaderboard rank
+      const [analysisRes, rankRes] = await Promise.all([
+        fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: addr }),
+        }),
+        fetch(`/api/leaderboard?address=${addr}`)
+      ]);
+
+      const data = await analysisRes.json();
+      const rankData = await rankRes.json();
+      
       setResult(data);
+      setUserRank(rankData.userRank);
       saveHistory(addr, data.score);
       setHistory(loadHistory(addr));
     } catch {}
@@ -167,9 +176,14 @@ export default function MyScorePage() {
 
             {/* Main card */}
             <div className="glass-card p-8 text-center">
-              <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
+              <div className="flex items-center justify-center gap-3 mb-4 flex-wrap">
                 <span className="font-mono text-white/50 text-sm">{shortenAddress(address!)}</span>
                 {badge && <span className={`badge ${badge.cls}`}>{badge.emoji} {badge.label}</span>}
+                {userRank && (
+                  <span className="flex items-center gap-1 text-teal-light text-sm font-bold">
+                    🏅 Ranked #{userRank}
+                  </span>
+                )}
               </div>
               <div className="flex justify-center mb-6">
                 <ScoreRing score={result.score} size={220} />

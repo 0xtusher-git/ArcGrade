@@ -9,7 +9,7 @@ export interface ScoreBreakdown {
   total: number;          // 0-100
 }
 
-export type TrustLevel = 'Trusted' | 'Neutral' | 'Suspicious' | 'New Wallet';
+export type TrustLevel = 'Elite' | 'Trusted' | 'Neutral' | 'Risky' | 'Untrusted';
 
 export function computeScore(data: WalletData): ScoreBreakdown {
   // Transaction count score (0-25)
@@ -43,16 +43,19 @@ export function computeScore(data: WalletData): ScoreBreakdown {
 }
 
 export function getTrustLevel(score: number): TrustLevel {
-  if (score >= 70) return 'Trusted';
-  if (score >= 40) return 'Neutral';
-  if (score >= 10) return 'Suspicious';
-  return 'New Wallet';
+  if (score >= 90) return 'Elite';
+  if (score >= 75) return 'Trusted';
+  if (score >= 50) return 'Neutral';
+  if (score >= 25) return 'Risky';
+  return 'Untrusted';
 }
 
 export function getScoreColor(score: number): string {
-  if (score >= 70) return '#00e5a0';
-  if (score >= 40) return '#ffd700';
-  return '#ff6b6b';
+  if (score >= 90) return '#00e5a0'; // Elite (Green)
+  if (score >= 75) return '#4a9aba'; // Trusted (Blue)
+  if (score >= 50) return '#ffd700'; // Neutral (Gold)
+  if (score >= 25) return '#ff9f43'; // Risky (Orange)
+  return '#ff6b6b';                 // Untrusted (Red)
 }
 
 export function getScoreLabel(score: number): string {
@@ -65,10 +68,11 @@ export function getScoreLabel(score: number): string {
 }
 
 export function getBadge(score: number): { label: string; emoji: string; cls: string } {
-  if (score >= 85) return { label: 'Elite',    emoji: '🥇', cls: 'badge-elite'    };
-  if (score >= 70) return { label: 'Trusted',  emoji: '🌟', cls: 'badge-trusted'  };
-  if (score >= 40) return { label: 'Verified', emoji: '✅', cls: 'badge-verified' };
-  return               { label: 'New',      emoji: '🆕', cls: 'badge-new'      };
+  if (score >= 90) return { label: 'Elite',     emoji: '🥇', cls: 'badge-elite'     };
+  if (score >= 75) return { label: 'Trusted',   emoji: '🌟', cls: 'badge-trusted'   };
+  if (score >= 50) return { label: 'Neutral',   emoji: '✅', cls: 'badge-neutral'   };
+  if (score >= 25) return { label: 'Risky',     emoji: '⚠️', cls: 'badge-risky'     };
+  return               { label: 'Untrusted', emoji: '❌', cls: 'badge-untrusted' };
 }
 
 export function shortenAddress(addr: string): string {
