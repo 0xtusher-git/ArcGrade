@@ -22,7 +22,9 @@ export const ARCTRUST_ABI = [
   'function getRemainingDeploys(address wallet) view returns (uint256)',
 ];
 
-export const USDC_ADDRESS = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238';
+// On Arc Testnet, USDC is the native token. 
+// A system contract exists at 0x36...000 for ERC20 compatibility.
+export const USDC_ADDRESS = '0x3600000000000000000000000000000000000000';
 export const ERC20_ABI = [
   'function balanceOf(address owner) view returns (uint256)',
   'function transfer(address to, uint256 amount) returns (bool)',

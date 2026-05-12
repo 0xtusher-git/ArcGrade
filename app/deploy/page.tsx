@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { ethers } from 'ethers';
 import Navbar from '@/components/Navbar';
 import { useWallet } from '@/hooks/useWallet';
-import { getERC20Balance, USDC_ADDRESS, ERC20_ABI, ARC_TESTNET_CONFIG, ARCTRUST_ABI } from '@/lib/contract';
+import { getNativeBalance, USDC_ADDRESS, ARC_TESTNET_CONFIG, ARCTRUST_ABI } from '@/lib/contract';
 import { CONTRACT_TEMPLATES, ContractTemplate } from '@/lib/templates';
 import { shortenAddress, getBadge, getScoreColor } from '@/lib/scoring';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -39,7 +39,7 @@ export default function DeployPage() {
   // Load Balance
   useEffect(() => {
     if (address && isConnected) {
-      getERC20Balance(USDC_ADDRESS, address).then(setUsdcBalance);
+      getNativeBalance(address).then(setUsdcBalance);
       fetchRemaining();
     }
   }, [address, isConnected]);
@@ -112,7 +112,7 @@ export default function DeployPage() {
       const code = selectedTemplate ? selectedTemplate.code : customCode;
       if (!code) throw new Error('No code to deploy');
 
-      // 0. Pay 1 USDC Fee to Owner
+      // 0. Pay 1 USDC Fee to Owner (Native Transfer on Arc)
       setDeployStatus('Initializing payment of 1 USDC...');
       const provider = new ethers.BrowserProvider(window.ethereum!);
       const signer = await provider.getSigner();
@@ -122,13 +122,12 @@ export default function DeployPage() {
       const arcTrust = new ethers.Contract(arcTrustAddr, ARCTRUST_ABI, signer);
       const ownerAddress = await arcTrust.owner();
 
-      const usdcContract = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, signer);
-      const decimals = await usdcContract.decimals();
-      const feeAmount = ethers.parseUnits('1', decimals);
-
       try {
         setDeployStatus('Sending 1 USDC fee to owner...');
-        const payTx = await usdcContract.transfer(ownerAddress, feeAmount);
+        const payTx = await signer.sendTransaction({
+          to: ownerAddress,
+          value: ethers.parseEther('1') // 1 USDC
+        });
         await payTx.wait();
       } catch (payErr) {
         throw new Error('Payment failed. Deployment cancelled.');
