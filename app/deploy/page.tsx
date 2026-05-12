@@ -27,6 +27,8 @@ export default function DeployPage() {
   const [deployedAddress, setDeployedAddress] = useState('');
   const [estimatedGas, setEstimatedGas] = useState('0');
   const [remainingDeploys, setRemainingDeploys] = useState<number | null>(null);
+  const [resetTimestamp, setResetTimestamp] = useState<number | null>(null);
+  const [countdown, setCountdown] = useState<string>('');
   const [recentDeployments, setRecentDeployments] = useState<any[]>([]);
   
   // Score Update State
@@ -51,11 +53,39 @@ export default function DeployPage() {
       if (!contractAddr || !address) return;
       const contract = new ethers.Contract(contractAddr, ARCTRUST_ABI, provider);
       const remaining = await contract.getRemainingDeploys(address);
+      const resetAt = await contract.getResetTimestamp(address);
       setRemainingDeploys(Number(remaining));
+      setResetTimestamp(Number(resetAt));
     } catch (err) {
       console.error('Failed to fetch remaining deploys:', err);
     }
   };
+
+  // Countdown Logic
+  useEffect(() => {
+    if (!resetTimestamp || resetTimestamp === 0) {
+      setCountdown('');
+      return;
+    }
+
+    const timer = setInterval(() => {
+      const now = Math.floor(Date.now() / 1000);
+      const diff = resetTimestamp - now;
+
+      if (diff <= 0) {
+        setCountdown('');
+        fetchRemaining(); // Auto reset
+        clearInterval(timer);
+      } else {
+        const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+        const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+        const s = (diff % 60).toString().padStart(2, '0');
+        setCountdown(`${h}:${m}:${s}`);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [resetTimestamp]);
 
   // Load Recent Deployments
   const fetchRecent = useCallback(async () => {
@@ -289,10 +319,17 @@ export default function DeployPage() {
                   </div>
 
                   {remainingDeploys !== null && (
-                    <div className="text-sm font-medium">
-                      <span className={remainingDeploys > 0 ? 'text-teal-light' : 'text-red-400'}>
-                        {remainingDeploys}/2 deploys remaining today
-                      </span>
+                    <div className="flex flex-col gap-1 items-center">
+                      <div className="text-sm font-medium">
+                        <span className={remainingDeploys > 0 ? 'text-teal-light' : 'text-red-400'}>
+                          {remainingDeploys}/2 deploys remaining
+                        </span>
+                      </div>
+                      {countdown && remainingDeploys === 0 && (
+                        <div className="text-xs text-white/40">
+                          Next deploy available in: <span className="font-mono text-teal-light">{countdown}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                   
@@ -427,13 +464,18 @@ export default function DeployPage() {
                     className="btn-primary py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {remainingDeploys === 0 
-                      ? 'Daily Limit Reached' 
+                      ? `Limit Reached (${countdown})` 
                       : parseFloat(usdcBalance) < 1.0 
                         ? 'Insufficient USDC' 
                         : 'Deploy Contract (1 USDC) 🚀'}
                   </button>
                   {remainingDeploys === 0 && (
-                    <p className="text-red-400 text-sm">Daily limit reached. You have used 2/2 deploys today. Come back tomorrow.</p>
+                    <div className="space-y-1">
+                      <p className="text-red-400 text-sm">Daily limit reached. You have used 2/2 deploys today. Come back tomorrow.</p>
+                      {countdown && (
+                        <p className="text-white/40 text-xs font-mono">Resets in: {countdown}</p>
+                      )}
+                    </div>
                   )}
                   <button onClick={() => setStep(2)} className="text-white/40 hover:text-white transition-colors text-sm">
                     Edit Code

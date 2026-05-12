@@ -20,6 +20,8 @@ export const ARCTRUST_ABI = [
   'function totalDeployments() view returns (uint256)',
   // Get remaining deploys for today
   'function getRemainingDeploys(address wallet) view returns (uint256)',
+  // Get the reset timestamp for the 24h window
+  'function getResetTimestamp(address wallet) view returns (uint256)',
 ];
 
 // On Arc Testnet, USDC is the native token. 
