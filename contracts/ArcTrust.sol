@@ -28,14 +28,6 @@ contract ArcTrust {
 
     Deployment[] private deployments;
     mapping(address => uint256) public deployCount;
-    
-    // Rolling 24h limit: wallet => count
-    mapping(address => uint256) public dailyDeployCount;
-    // Rolling 24h limit: wallet => first deployment timestamp in window
-    mapping(address => uint256) public firstDeployTimestamp;
-    
-    uint256 public constant DAILY_LIMIT = 2;
-    uint256 public constant WINDOW_DURATION = 24 hours;
 
     // ─── Events ───────────────────────────────────────────────────────────────
 
@@ -90,17 +82,6 @@ contract ArcTrust {
     function recordDeployment(address _contractAddress, string memory _templateName) external {
         require(_contractAddress != address(0), "ArcTrust: zero address");
         
-        // Rolling 24-hour window logic
-        if (firstDeployTimestamp[msg.sender] == 0 || block.timestamp >= firstDeployTimestamp[msg.sender] + WINDOW_DURATION) {
-            // New window
-            firstDeployTimestamp[msg.sender] = block.timestamp;
-            dailyDeployCount[msg.sender] = 1;
-        } else {
-            // Existing window
-            require(dailyDeployCount[msg.sender] < DAILY_LIMIT, "ArcTrust: daily limit reached");
-            dailyDeployCount[msg.sender]++;
-        }
-
         deployments.push(Deployment({
             contractAddress: _contractAddress,
             templateName: _templateName,
@@ -179,23 +160,6 @@ contract ArcTrust {
         return result;
     }
 
-    /// @notice Get remaining deployments for today for a wallet
-    function getRemainingDeploys(address wallet) external view returns (uint256) {
-        if (firstDeployTimestamp[wallet] == 0 || block.timestamp >= firstDeployTimestamp[wallet] + WINDOW_DURATION) {
-            return DAILY_LIMIT;
-        }
-        uint256 used = dailyDeployCount[wallet];
-        if (used >= DAILY_LIMIT) return 0;
-        return DAILY_LIMIT - used;
-    }
-
-    /// @notice Get the reset timestamp for the 24h window
-    function getResetTimestamp(address wallet) external view returns (uint256) {
-        if (firstDeployTimestamp[wallet] == 0 || block.timestamp >= firstDeployTimestamp[wallet] + WINDOW_DURATION) {
-            return 0;
-        }
-        return firstDeployTimestamp[wallet] + WINDOW_DURATION;
-    }
 
     // ─── Admin Functions ──────────────────────────────────────────────────────
 

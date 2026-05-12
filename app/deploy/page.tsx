@@ -26,10 +26,6 @@ export default function DeployPage() {
   const [deployStatus, setDeployStatus] = useState('');
   const [deployedAddress, setDeployedAddress] = useState('');
   const [estimatedGas, setEstimatedGas] = useState('0');
-  const [remainingDeploys, setRemainingDeploys] = useState<number | null>(null);
-  const [resetTimestamp, setResetTimestamp] = useState<number | null>(null);
-  const [countdown, setCountdown] = useState<string>('');
-  const [showLimitModal, setShowLimitModal] = useState(false);
   const [recentDeployments, setRecentDeployments] = useState<any[]>([]);
   
   // Score Update State
@@ -48,46 +44,9 @@ export default function DeployPage() {
   }, [address, isConnected]);
 
   const fetchRemaining = async () => {
-    try {
-      const provider = new ethers.JsonRpcProvider(ARC_TESTNET_CONFIG.rpcUrls[0]);
-      const contractAddr = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
-      if (!contractAddr || !address) return;
-      const contract = new ethers.Contract(contractAddr, ARCTRUST_ABI, provider);
-      const remaining = await contract.getRemainingDeploys(address);
-      const resetAt = await contract.getResetTimestamp(address);
-      setRemainingDeploys(Number(remaining));
-      setResetTimestamp(Number(resetAt));
-    } catch (err) {
-      console.error('Failed to fetch remaining deploys:', err);
-    }
+    // No limit
   };
 
-  // Countdown Logic
-  useEffect(() => {
-    if (!resetTimestamp || resetTimestamp === 0) {
-      setCountdown('');
-      return;
-    }
-
-    const timer = setInterval(() => {
-      const now = Math.floor(Date.now() / 1000);
-      const diff = resetTimestamp - now;
-
-      if (diff <= 0) {
-        setCountdown('');
-        fetchRemaining(); // Auto reset
-        setShowLimitModal(false); // Auto close modal
-        clearInterval(timer);
-      } else {
-        const h = Math.floor(diff / 3600).toString().padStart(2, '0');
-        const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
-        const s = (diff % 60).toString().padStart(2, '0');
-        setCountdown(`${h}:${m}:${s}`);
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [resetTimestamp]);
 
   // Load Recent Deployments
   const fetchRecent = useCallback(async () => {
@@ -136,12 +95,6 @@ export default function DeployPage() {
 
   const handleDeploy = async () => {
     if (!isConnected || !isCorrectNetwork) return;
-
-    // 0. PRE-CHECK: Strict Daily Limit Check
-    if (remainingDeploys === 0) {
-      setShowLimitModal(true);
-      return;
-    }
     
     setIsDeploying(true);
     setDeployStatus('Compiling contract...');
@@ -154,14 +107,6 @@ export default function DeployPage() {
       const signer = await provider.getSigner();
       const arcTrustAddr = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
       const arcTrust = new ethers.Contract(arcTrustAddr, ARCTRUST_ABI, signer);
-
-      // 0. SECOND PRE-CHECK (On-Chain)
-      setDeployStatus('Checking daily deployment limit...');
-      const remaining = await arcTrust.getRemainingDeploys(address);
-      if (Number(remaining) === 0) {
-        setShowLimitModal(true);
-        throw new Error('Daily limit reached.');
-      }
 
       // 1. Pay 1 USDC Fee to Owner (Native Transfer on Arc)
       setDeployStatus('Initializing payment of 1 USDC...');
@@ -333,20 +278,6 @@ export default function DeployPage() {
                     </div>
                   </div>
 
-                  {remainingDeploys !== null && (
-                    <div className="flex flex-col gap-1 items-center">
-                      <div className="text-sm font-medium">
-                        <span className={remainingDeploys > 0 ? 'text-teal-light' : 'text-red-400'}>
-                          {remainingDeploys}/2 deploys remaining
-                        </span>
-                      </div>
-                      {countdown && remainingDeploys === 0 && (
-                        <div className="text-xs text-white/40">
-                          Next deploy available in: <span className="font-mono text-teal-light">{countdown}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
                   
                   {parseFloat(usdcBalance) < 1.0 && (
                     <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-200 text-sm max-w-md mx-auto">
@@ -624,75 +555,6 @@ export default function DeployPage() {
         </div>
       </div>
 
-      {/* Daily Limit Modal */}
-      <AnimatePresence>
-        {showLimitModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowLimitModal(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative glass-card w-full max-w-md p-10 border-white/10 shadow-2xl bg-navy/95 overflow-hidden"
-            >
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-teal-light/20 blur-[80px] rounded-full pointer-events-none" />
-              
-              <button 
-                onClick={() => setShowLimitModal(false)}
-                className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors z-10"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-
-              <div className="text-center space-y-8 relative z-10">
-                <div className="text-5xl">🚫</div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-black text-white leading-tight">Daily Deploy Limit Reached</h3>
-                  <p className="text-teal-light/80 font-bold uppercase tracking-widest text-[10px]">Security Protocol Active</p>
-                </div>
-                
-                <div className="space-y-4 py-6 px-6 bg-white/5 rounded-2xl border border-white/5">
-                  <p className="text-white/60 text-sm">
-                    You have used both of your 2 daily deploys. Your next deployment will be available in:
-                  </p>
-                  <div className="text-4xl font-mono font-black text-teal-light tracking-tighter animate-pulse">
-                    {countdown || '00:00:00'}
-                  </div>
-                </div>
-
-                <div className="text-white/40 text-xs leading-relaxed max-w-[300px] mx-auto italic">
-                  Each wallet is allowed 2 free deployments per day. 
-                  This limit resets 24 hours after your first deployment.
-                </div>
-
-                <div className="flex flex-col gap-3 pt-6">
-                  <a 
-                    href="https://faucet.circle.com/" 
-                    target="_blank"
-                    className="btn-primary py-4 text-center no-underline font-black text-sm uppercase tracking-widest"
-                  >
-                    Get More Test USDC
-                  </a>
-                  <button 
-                    onClick={() => setShowLimitModal(false)}
-                    className="text-white/30 hover:text-white text-[10px] font-black uppercase tracking-widest py-2 transition-colors"
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
