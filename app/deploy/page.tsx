@@ -29,6 +29,7 @@ export default function DeployPage() {
   const [remainingDeploys, setRemainingDeploys] = useState<number | null>(null);
   const [resetTimestamp, setResetTimestamp] = useState<number | null>(null);
   const [countdown, setCountdown] = useState<string>('');
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const [recentDeployments, setRecentDeployments] = useState<any[]>([]);
   
   // Score Update State
@@ -75,6 +76,7 @@ export default function DeployPage() {
       if (diff <= 0) {
         setCountdown('');
         fetchRemaining(); // Auto reset
+        setShowLimitModal(false); // Auto close modal
         clearInterval(timer);
       } else {
         const h = Math.floor(diff / 3600).toString().padStart(2, '0');
@@ -134,6 +136,12 @@ export default function DeployPage() {
 
   const handleDeploy = async () => {
     if (!isConnected || !isCorrectNetwork) return;
+
+    // 0. PRE-CHECK: Strict Daily Limit Check
+    if (remainingDeploys === 0) {
+      setShowLimitModal(true);
+      return;
+    }
     
     setIsDeploying(true);
     setDeployStatus('Compiling contract...');
@@ -147,11 +155,12 @@ export default function DeployPage() {
       const arcTrustAddr = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
       const arcTrust = new ethers.Contract(arcTrustAddr, ARCTRUST_ABI, signer);
 
-      // 0. PRE-CHECK: Strict Daily Limit Check
+      // 0. SECOND PRE-CHECK (On-Chain)
       setDeployStatus('Checking daily deployment limit...');
       const remaining = await arcTrust.getRemainingDeploys(address);
       if (Number(remaining) === 0) {
-        throw new Error('Daily limit reached. You have used 2/2 deploys today. Come back tomorrow.');
+        setShowLimitModal(true);
+        throw new Error('Daily limit reached.');
       }
 
       // 1. Pay 1 USDC Fee to Owner (Native Transfer on Arc)
@@ -466,23 +475,13 @@ export default function DeployPage() {
                 <div className="flex flex-col gap-4">
                   <button 
                     onClick={handleDeploy} 
-                    disabled={remainingDeploys === 0 || parseFloat(usdcBalance) < 1.0}
+                    disabled={parseFloat(usdcBalance) < 1.0}
                     className="btn-primary py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {remainingDeploys === 0 
-                      ? `Limit Reached (${countdown})` 
-                      : parseFloat(usdcBalance) < 1.0 
-                        ? 'Insufficient USDC' 
-                        : 'Deploy Contract (1 USDC) 🚀'}
+                    {parseFloat(usdcBalance) < 1.0 
+                      ? 'Insufficient USDC' 
+                      : 'Deploy Contract (1 USDC) 🚀'}
                   </button>
-                  {remainingDeploys === 0 && (
-                    <div className="space-y-1">
-                      <p className="text-red-400 text-sm">Daily limit reached. You have used 2/2 deploys today. Come back tomorrow.</p>
-                      {countdown && (
-                        <p className="text-white/40 text-xs font-mono">Resets in: {countdown}</p>
-                      )}
-                    </div>
-                  )}
                   <button onClick={() => setStep(2)} className="text-white/40 hover:text-white transition-colors text-sm">
                     Edit Code
                   </button>
@@ -497,10 +496,10 @@ export default function DeployPage() {
               key="step4"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               className="space-y-6"
             >
               <div className="glass-card p-10 text-center relative overflow-hidden">
-                {/* Confetti simulation overlay could go here */}
                 <div className="relative z-10">
                   <div className="w-20 h-20 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
                     ✅
@@ -519,7 +518,6 @@ export default function DeployPage() {
                     </a>
                   </div>
 
-                  {/* Score Jump Section */}
                   <div className="border-t border-white/10 pt-10">
                     <h3 className="text-xl font-bold text-white mb-6">Reputation Updated</h3>
                     <div className="flex items-center justify-center gap-12 mb-8">
@@ -625,6 +623,76 @@ export default function DeployPage() {
           </div>
         </div>
       </div>
+
+      {/* Daily Limit Modal */}
+      <AnimatePresence>
+        {showLimitModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLimitModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative glass-card w-full max-w-md p-10 border-white/10 shadow-2xl bg-navy/95 overflow-hidden"
+            >
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-teal-light/20 blur-[80px] rounded-full pointer-events-none" />
+              
+              <button 
+                onClick={() => setShowLimitModal(false)}
+                className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors z-10"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="text-center space-y-8 relative z-10">
+                <div className="text-5xl">🚫</div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-white leading-tight">Daily Deploy Limit Reached</h3>
+                  <p className="text-teal-light/80 font-bold uppercase tracking-widest text-[10px]">Security Protocol Active</p>
+                </div>
+                
+                <div className="space-y-4 py-6 px-6 bg-white/5 rounded-2xl border border-white/5">
+                  <p className="text-white/60 text-sm">
+                    You have used both of your 2 daily deploys. Your next deployment will be available in:
+                  </p>
+                  <div className="text-4xl font-mono font-black text-teal-light tracking-tighter animate-pulse">
+                    {countdown || '00:00:00'}
+                  </div>
+                </div>
+
+                <div className="text-white/40 text-xs leading-relaxed max-w-[300px] mx-auto italic">
+                  Each wallet is allowed 2 free deployments per day. 
+                  This limit resets 24 hours after your first deployment.
+                </div>
+
+                <div className="flex flex-col gap-3 pt-6">
+                  <a 
+                    href="https://faucet.circle.com/" 
+                    target="_blank"
+                    className="btn-primary py-4 text-center no-underline font-black text-sm uppercase tracking-widest"
+                  >
+                    Get More Test USDC
+                  </a>
+                  <button 
+                    onClick={() => setShowLimitModal(false)}
+                    className="text-white/30 hover:text-white text-[10px] font-black uppercase tracking-widest py-2 transition-colors"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
