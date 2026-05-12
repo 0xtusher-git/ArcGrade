@@ -13,11 +13,13 @@ export const ARCTRUST_ABI = [
   // Event emitted on score update
   'event ScoreUpdated(address indexed wallet, uint256 score, uint256 timestamp)',
   // Record a deployment
-  'function recordDeployment(address contractAddress, string templateName) external',
+  'function recordDeployment(address contractAddress, string templateName) external payable',
   // Get recent deployments
   'function getRecentDeployments(uint256 limit) view returns (tuple(address contractAddress, string templateName, uint256 timestamp, address deployer)[])',
   // Get total deployments
   'function totalDeployments() view returns (uint256)',
+  // Get remaining deploys for today
+  'function getRemainingDeploys(address wallet) view returns (uint256)',
 ];
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ?? '';

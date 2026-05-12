@@ -26,6 +26,7 @@ export default function DeployPage() {
   const [deployStatus, setDeployStatus] = useState('');
   const [deployedAddress, setDeployedAddress] = useState('');
   const [estimatedGas, setEstimatedGas] = useState('0');
+  const [remainingDeploys, setRemainingDeploys] = useState<number | null>(null);
   const [recentDeployments, setRecentDeployments] = useState<any[]>([]);
   
   // Score Update State
@@ -39,8 +40,22 @@ export default function DeployPage() {
   useEffect(() => {
     if (address && isConnected) {
       getNativeBalance(address).then(setBalance);
+      fetchRemaining();
     }
   }, [address, isConnected]);
+
+  const fetchRemaining = async () => {
+    try {
+      const provider = new ethers.JsonRpcProvider(ARC_TESTNET_CONFIG.rpcUrls[0]);
+      const contractAddr = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
+      if (!contractAddr || !address) return;
+      const contract = new ethers.Contract(contractAddr, ARCTRUST_ABI, provider);
+      const remaining = await contract.getRemainingDeploys(address);
+      setRemainingDeploys(Number(remaining));
+    } catch (err) {
+      console.error('Failed to fetch remaining deploys:', err);
+    }
+  };
 
   // Load Recent Deployments
   const fetchRecent = useCallback(async () => {
@@ -129,8 +144,12 @@ export default function DeployPage() {
       // 2. Record Deployment in ArcTrust
       const arcTrustAddr = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
       if (arcTrustAddr) {
+        setDeployStatus('Recording deployment & charging fee...');
         const arcTrust = new ethers.Contract(arcTrustAddr, ARCTRUST_ABI, signer);
-        await arcTrust.recordDeployment(addr, selectedTemplate?.name || 'Custom');
+        const tx = await arcTrust.recordDeployment(addr, selectedTemplate?.name || 'Custom', {
+          value: ethers.parseEther('1') // 1 USDC Fee
+        });
+        await tx.wait();
       }
 
       // 3. Trigger Score Re-analysis
@@ -138,9 +157,13 @@ export default function DeployPage() {
       
       setStep(4);
       fetchRecent();
+      fetchRemaining();
     } catch (err: any) {
       console.error(err);
-      setDeployStatus(`Error: ${err.message || 'Deployment failed'}`);
+      let msg = err.message || 'Deployment failed';
+      if (msg.includes('daily limit reached')) msg = 'Daily limit reached. You can deploy again tomorrow.';
+      if (msg.includes('insufficient fee')) msg = 'Insufficient USDC balance for deployment fee.';
+      setDeployStatus(`Error: ${msg}`);
     } finally {
       setIsDeploying(false);
     }
@@ -255,12 +278,20 @@ export default function DeployPage() {
                       <div className="font-bold text-teal-light">{parseFloat(balance).toFixed(2)} USDC</div>
                     </div>
                   </div>
+
+                  {remainingDeploys !== null && (
+                    <div className="text-sm font-medium">
+                      <span className={remainingDeploys > 0 ? 'text-teal-light' : 'text-red-400'}>
+                        {remainingDeploys}/2 deploys remaining today
+                      </span>
+                    </div>
+                  )}
                   
-                  {parseFloat(balance) < 0.01 && (
-                    <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-200 text-sm">
-                      ⚠️ You need some test USDC to pay for gas. 
-                      <a href="https://faucet.circle.com/" target="_blank" className="underline ml-1 hover:text-white">
-                        Get free USDC from Faucet
+                  {parseFloat(balance) < 1.01 && (
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-200 text-sm max-w-md mx-auto">
+                      ⚠️ Insufficient USDC balance. Get test USDC from the 
+                      <a href="https://faucet.circle.com/" target="_blank" className="underline ml-1 hover:text-white font-bold">
+                        faucet
                       </a>
                     </div>
                   )}
@@ -365,7 +396,11 @@ export default function DeployPage() {
                 </div>
                 <div className="flex justify-between py-3 border-b border-white/5">
                   <span className="text-white/40">Estimated Gas</span>
-                  <span className="text-teal-light font-bold">~0.005 USDC</span>
+                  <span className="text-white font-medium">~0.005 USDC</span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-white/5">
+                  <span className="text-white/40 font-bold">Deployment Fee</span>
+                  <span className="text-teal-light font-black">1.00 USDC</span>
                 </div>
               </div>
 
@@ -373,13 +408,24 @@ export default function DeployPage() {
                 <div className="space-y-6">
                   <div className="w-16 h-16 border-4 border-white/10 border-t-teal-light rounded-full animate-spin mx-auto" />
                   <div className="text-lg font-medium text-white animate-pulse">{deployStatus}</div>
-                  <p className="text-white/40 text-sm">Please confirm the transaction in MetaMask.</p>
+                  <p className="text-white/40 text-sm">Please confirm the transactions in MetaMask.</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
-                  <button onClick={handleDeploy} className="btn-primary py-4 text-lg">
-                    Deploy Contract 🚀
+                  <button 
+                    onClick={handleDeploy} 
+                    disabled={remainingDeploys === 0 || parseFloat(balance) < 1.0}
+                    className="btn-primary py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {remainingDeploys === 0 
+                      ? 'Daily Limit Reached' 
+                      : parseFloat(balance) < 1.0 
+                        ? 'Insufficient USDC' 
+                        : 'Deploy Contract (1 USDC) 🚀'}
                   </button>
+                  {remainingDeploys === 0 && (
+                    <p className="text-red-400 text-sm">Daily limit reached. You can deploy again tomorrow.</p>
+                  )}
                   <button onClick={() => setStep(2)} className="text-white/40 hover:text-white transition-colors text-sm">
                     Edit Code
                   </button>
