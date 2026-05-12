@@ -32,7 +32,6 @@ contract ArcTrust {
     // Track daily deployments: wallet => day (timestamp / 86400) => count
     mapping(address => mapping(uint256 => uint256)) public dailyDeployCount;
     
-    uint256 public constant DEPLOYMENT_FEE = 1 ether; // 1 USDC (assuming 18 decimals like native)
     uint256 public constant DAILY_LIMIT = 2;
 
     // ─── Events ───────────────────────────────────────────────────────────────
@@ -85,9 +84,8 @@ contract ArcTrust {
     /// @notice Record a new contract deployment
     /// @param _contractAddress The address of the deployed contract
     /// @param _templateName    The name of the template used (or 'Custom')
-    function recordDeployment(address _contractAddress, string memory _templateName) external payable {
+    function recordDeployment(address _contractAddress, string memory _templateName) external {
         require(_contractAddress != address(0), "ArcTrust: zero address");
-        require(msg.value >= DEPLOYMENT_FEE, "ArcTrust: insufficient fee");
         
         uint256 day = block.timestamp / 86400;
         require(dailyDeployCount[msg.sender][day] < DAILY_LIMIT, "ArcTrust: daily limit reached");
@@ -103,11 +101,6 @@ contract ArcTrust {
         dailyDeployCount[msg.sender][day]++;
         
         emit ContractDeployed(msg.sender, _contractAddress, _templateName);
-
-        // Refund excess if any
-        if (msg.value > DEPLOYMENT_FEE) {
-            payable(msg.sender).transfer(msg.value - DEPLOYMENT_FEE);
-        }
     }
 
     /// @notice Withdraw accumulated fees (owner only)

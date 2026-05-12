@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { ethers } from 'ethers';
 import Navbar from '@/components/Navbar';
 import { useWallet } from '@/hooks/useWallet';
-import { getNativeBalance, ARC_TESTNET_CONFIG, ARCTRUST_ABI } from '@/lib/contract';
+import { getERC20Balance, USDC_ADDRESS, ERC20_ABI, ARC_TESTNET_CONFIG, ARCTRUST_ABI } from '@/lib/contract';
 import { CONTRACT_TEMPLATES, ContractTemplate } from '@/lib/templates';
 import { shortenAddress, getBadge, getScoreColor } from '@/lib/scoring';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,7 +18,7 @@ export default function DeployPage() {
   
   // State
   const [step, setStep] = useState(1);
-  const [balance, setBalance] = useState('0');
+  const [usdcBalance, setUsdcBalance] = useState('0');
   const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null);
   const [customCode, setCustomCode] = useState('');
   const [isCompiling, setIsCompiling] = useState(false);
@@ -39,7 +39,7 @@ export default function DeployPage() {
   // Load Balance
   useEffect(() => {
     if (address && isConnected) {
-      getNativeBalance(address).then(setBalance);
+      getERC20Balance(USDC_ADDRESS, address).then(setUsdcBalance);
       fetchRemaining();
     }
   }, [address, isConnected]);
@@ -112,17 +112,33 @@ export default function DeployPage() {
       const code = selectedTemplate ? selectedTemplate.code : customCode;
       if (!code) throw new Error('No code to deploy');
 
-      // 1. Compile (Simulated for speed in demo, or real if solcRef is ready)
-      await new Promise(r => setTimeout(r, 1500));
-      
-      // In a real app, we'd use solcRef.current.compile(JSON.stringify(input))
-      // For this task, we'll use pre-compiled bytecode for the templates or a mock for custom.
-      // Since I don't have the bytecodes ready for all templates, I'll use a placeholder.
-      // IMPORTANT: In a production app, we would have a backend endpoint for this or a robust worker.
-      
-      setDeployStatus('Sending transaction...');
+      // 0. Pay 1 USDC Fee to Owner
+      setDeployStatus('Initializing payment of 1 USDC...');
       const provider = new ethers.BrowserProvider(window.ethereum!);
       const signer = await provider.getSigner();
+
+      // Get owner address from contract
+      const arcTrustAddr = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
+      const arcTrust = new ethers.Contract(arcTrustAddr, ARCTRUST_ABI, signer);
+      const ownerAddress = await arcTrust.owner();
+
+      const usdcContract = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, signer);
+      const decimals = await usdcContract.decimals();
+      const feeAmount = ethers.parseUnits('1', decimals);
+
+      try {
+        setDeployStatus('Sending 1 USDC fee to owner...');
+        const payTx = await usdcContract.transfer(ownerAddress, feeAmount);
+        await payTx.wait();
+      } catch (payErr) {
+        throw new Error('Payment failed. Deployment cancelled.');
+      }
+
+      // 1. Compile (Simulated for speed in demo)
+      setDeployStatus('Compiling contract...');
+      await new Promise(r => setTimeout(r, 1500));
+      
+      setDeployStatus('Sending deployment transaction...');
       
       // Dummy Bytecode for demo (SimpleStorage-like)
       const bytecode = "0x608060405234801561001057600080fd5b50610150806100206000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c80633fa4f2451460375780636d4ce101146049575b600080fd5b603d605b565b604051604291906067565b60405180910390f35b605960048036036020811015606d57600080fd5b50356079565b005b60005481565b6000819050919050565b60006020820190508181036000830152606181603c565b9050919050565b600054819050919050565b600081905091905056fea26469706673582212204c3e80a0f4b3e6c8e5a0f4b3e6c8e5a0f4b3e6c8e5a0f4b3e6c8e5a0f4b3e6c864736f6c63430008140033";
@@ -135,21 +151,16 @@ export default function DeployPage() {
       const factory = new ethers.ContractFactory(abi, bytecode, signer);
       const contract = await factory.deploy();
       
-      setDeployStatus('Waiting for confirmation...');
+      setDeployStatus('Waiting for deployment confirmation...');
       await contract.waitForDeployment();
       const addr = await contract.getAddress();
       setDeployedAddress(addr);
-      setDeployStatus('Contract deployed! ✅');
       
       // 2. Record Deployment in ArcTrust
-      const arcTrustAddr = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
       if (arcTrustAddr) {
-        setDeployStatus('Recording deployment & charging fee...');
-        const arcTrust = new ethers.Contract(arcTrustAddr, ARCTRUST_ABI, signer);
-        const tx = await arcTrust.recordDeployment(addr, selectedTemplate?.name || 'Custom', {
-          value: ethers.parseEther('1') // 1 USDC Fee
-        });
-        await tx.wait();
+        setDeployStatus('Recording on-chain metadata...');
+        const recordTx = await arcTrust.recordDeployment(addr, selectedTemplate?.name || 'Custom');
+        await recordTx.wait();
       }
 
       // 3. Trigger Score Re-analysis
@@ -161,8 +172,7 @@ export default function DeployPage() {
     } catch (err: any) {
       console.error(err);
       let msg = err.message || 'Deployment failed';
-      if (msg.includes('daily limit reached')) msg = 'Daily limit reached. You can deploy again tomorrow.';
-      if (msg.includes('insufficient fee')) msg = 'Insufficient USDC balance for deployment fee.';
+      if (msg.includes('daily limit reached')) msg = 'Daily limit reached. You have used 2/2 deploys today. Come back tomorrow.';
       setDeployStatus(`Error: ${msg}`);
     } finally {
       setIsDeploying(false);
@@ -275,7 +285,7 @@ export default function DeployPage() {
                     </div>
                     <div className="glass-card p-4 bg-white/5">
                       <div className="text-xs text-white/40 mb-1 uppercase tracking-wider">Balance</div>
-                      <div className="font-bold text-teal-light">{parseFloat(balance).toFixed(2)} USDC</div>
+                      <div className="font-bold text-teal-light">{parseFloat(usdcBalance).toFixed(2)} USDC</div>
                     </div>
                   </div>
 
@@ -287,7 +297,7 @@ export default function DeployPage() {
                     </div>
                   )}
                   
-                  {parseFloat(balance) < 1.01 && (
+                  {parseFloat(usdcBalance) < 1.0 && (
                     <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-200 text-sm max-w-md mx-auto">
                       ⚠️ Insufficient USDC balance. Get test USDC from the 
                       <a href="https://faucet.circle.com/" target="_blank" className="underline ml-1 hover:text-white font-bold">
@@ -414,17 +424,17 @@ export default function DeployPage() {
                 <div className="flex flex-col gap-4">
                   <button 
                     onClick={handleDeploy} 
-                    disabled={remainingDeploys === 0 || parseFloat(balance) < 1.0}
+                    disabled={remainingDeploys === 0 || parseFloat(usdcBalance) < 1.0}
                     className="btn-primary py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {remainingDeploys === 0 
                       ? 'Daily Limit Reached' 
-                      : parseFloat(balance) < 1.0 
+                      : parseFloat(usdcBalance) < 1.0 
                         ? 'Insufficient USDC' 
                         : 'Deploy Contract (1 USDC) 🚀'}
                   </button>
                   {remainingDeploys === 0 && (
-                    <p className="text-red-400 text-sm">Daily limit reached. You can deploy again tomorrow.</p>
+                    <p className="text-red-400 text-sm">Daily limit reached. You have used 2/2 deploys today. Come back tomorrow.</p>
                   )}
                   <button onClick={() => setStep(2)} className="text-white/40 hover:text-white transition-colors text-sm">
                     Edit Code

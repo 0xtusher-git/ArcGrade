@@ -13,13 +13,20 @@ export const ARCTRUST_ABI = [
   // Event emitted on score update
   'event ScoreUpdated(address indexed wallet, uint256 score, uint256 timestamp)',
   // Record a deployment
-  'function recordDeployment(address contractAddress, string templateName) external payable',
+  'function recordDeployment(address contractAddress, string templateName) external',
   // Get recent deployments
   'function getRecentDeployments(uint256 limit) view returns (tuple(address contractAddress, string templateName, uint256 timestamp, address deployer)[])',
   // Get total deployments
   'function totalDeployments() view returns (uint256)',
   // Get remaining deploys for today
   'function getRemainingDeploys(address wallet) view returns (uint256)',
+];
+
+export const USDC_ADDRESS = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238';
+export const ERC20_ABI = [
+  'function balanceOf(address owner) view returns (uint256)',
+  'function transfer(address to, uint256 amount) returns (bool)',
+  'function decimals() view returns (uint8)',
 ];
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ?? '';
@@ -117,6 +124,19 @@ export async function getNativeBalance(address: string): Promise<string> {
     const provider = getReadProvider();
     const balance = await provider.getBalance(address);
     return ethers.formatEther(balance);
+  } catch {
+    return '0';
+  }
+}
+
+// Get ERC20 balance
+export async function getERC20Balance(tokenAddress: string, walletAddress: string): Promise<string> {
+  try {
+    const provider = getReadProvider();
+    const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
+    const balance = await contract.balanceOf(walletAddress);
+    const decimals = await contract.decimals();
+    return ethers.formatUnits(balance, decimals);
   } catch {
     return '0';
   }
