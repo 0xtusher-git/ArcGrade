@@ -12,6 +12,12 @@ export const ARCTRUST_ABI = [
   'function owner() view returns (address)',
   // Event emitted on score update
   'event ScoreUpdated(address indexed wallet, uint256 score, uint256 timestamp)',
+  // Record a deployment
+  'function recordDeployment(address contractAddress, string templateName) external',
+  // Get recent deployments
+  'function getRecentDeployments(uint256 limit) view returns (tuple(address contractAddress, string templateName, uint256 timestamp, address deployer)[])',
+  // Get total deployments
+  'function totalDeployments() view returns (uint256)',
 ];
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ?? '';
@@ -100,5 +106,16 @@ export async function switchToArcTestnet(): Promise<boolean> {
       }
     }
     return false;
+  }
+}
+
+// Get native wallet balance (USDC on Arc)
+export async function getNativeBalance(address: string): Promise<string> {
+  try {
+    const provider = getReadProvider();
+    const balance = await provider.getBalance(address);
+    return ethers.formatEther(balance);
+  } catch {
+    return '0';
   }
 }

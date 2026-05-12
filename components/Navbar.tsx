@@ -13,8 +13,9 @@ export default function Navbar() {
   const links = [
     { href: '/', label: 'Home' },
     { href: '/leaderboard', label: 'Leaderboard' },
-    { href: '/my-score', label: 'My Score' },
     { href: '/challenge', label: 'Challenge' },
+    { href: '/deploy', label: 'Deploy' },
+    { href: '/my-score', label: 'My Score' },
   ];
 
   return (

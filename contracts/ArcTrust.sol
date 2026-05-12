@@ -19,11 +19,22 @@ contract ArcTrust {
     mapping(address => ScoreData) private scores;
     address[] private scoredWallets; // Track all wallets that have been scored
 
+    struct Deployment {
+        address contractAddress;
+        string templateName;
+        uint256 timestamp;
+        address deployer;
+    }
+
+    Deployment[] private deployments;
+    mapping(address => uint256) public deployCount;
+
     // ─── Events ───────────────────────────────────────────────────────────────
 
     event ScoreUpdated(address indexed wallet, uint256 score, uint256 timestamp);
     event UpdaterChanged(address indexed oldUpdater, address indexed newUpdater);
     event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);
+    event ContractDeployed(address indexed deployer, address indexed contractAddress, string templateName);
 
     // ─── Modifiers ────────────────────────────────────────────────────────────
 
@@ -65,6 +76,23 @@ contract ArcTrust {
         emit ScoreUpdated(wallet, score, block.timestamp);
     }
 
+    /// @notice Record a new contract deployment
+    /// @param _contractAddress The address of the deployed contract
+    /// @param _templateName    The name of the template used (or 'Custom')
+    function recordDeployment(address _contractAddress, string memory _templateName) external {
+        require(_contractAddress != address(0), "ArcTrust: zero address");
+        
+        deployments.push(Deployment({
+            contractAddress: _contractAddress,
+            templateName: _templateName,
+            timestamp: block.timestamp,
+            deployer: msg.sender
+        }));
+        
+        deployCount[msg.sender]++;
+        emit ContractDeployed(msg.sender, _contractAddress, _templateName);
+    }
+
     // ─── Read Functions ───────────────────────────────────────────────────────
 
     /// @notice Get the trust score for any wallet
@@ -100,6 +128,28 @@ contract ArcTrust {
         address[] memory result = new address[](end - offset);
         for (uint256 i = offset; i < end; i++) {
             result[i - offset] = scoredWallets[i];
+        }
+        return result;
+    }
+
+    /// @notice Get total number of deployments recorded
+    function totalDeployments() external view returns (uint256) {
+        return deployments.length;
+    }
+
+    /// @notice Get recent deployments
+    /// @param limit Max number of deployments to return
+    function getRecentDeployments(uint256 limit)
+        external
+        view
+        returns (Deployment[] memory)
+    {
+        uint256 total = deployments.length;
+        uint256 count = limit > total ? total : limit;
+        Deployment[] memory result = new Deployment[](count);
+        
+        for (uint256 i = 0; i < count; i++) {
+            result[i] = deployments[total - 1 - i];
         }
         return result;
     }
