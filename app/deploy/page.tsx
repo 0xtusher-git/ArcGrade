@@ -142,14 +142,20 @@ export default function DeployPage() {
       const code = selectedTemplate ? selectedTemplate.code : customCode;
       if (!code) throw new Error('No code to deploy');
 
-      // 0. Pay 1 USDC Fee to Owner (Native Transfer on Arc)
-      setDeployStatus('Initializing payment of 1 USDC...');
       const provider = new ethers.BrowserProvider(window.ethereum!);
       const signer = await provider.getSigner();
-
-      // Get owner address from contract
       const arcTrustAddr = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
       const arcTrust = new ethers.Contract(arcTrustAddr, ARCTRUST_ABI, signer);
+
+      // 0. PRE-CHECK: Strict Daily Limit Check
+      setDeployStatus('Checking daily deployment limit...');
+      const remaining = await arcTrust.getRemainingDeploys(address);
+      if (Number(remaining) === 0) {
+        throw new Error('Daily limit reached. You have used 2/2 deploys today. Come back tomorrow.');
+      }
+
+      // 1. Pay 1 USDC Fee to Owner (Native Transfer on Arc)
+      setDeployStatus('Initializing payment of 1 USDC...');
       const ownerAddress = await arcTrust.owner();
 
       try {
