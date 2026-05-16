@@ -1,9 +1,9 @@
-// ethers.js v6 contract helpers for ArcTrust smart contract
+// ethers.js v6 contract helpers for ArcGrade smart contract
 
 import { ethers } from 'ethers';
 
 // ABI: only the functions we need to call from the frontend
-export const ARCTRUST_ABI = [
+export const ARCGRADE_ABI = [
   // Read score for any wallet
   'function getScore(address wallet) view returns (uint256 score, uint256 lastUpdated)',
   // Write score (only authorized updater can call)
@@ -45,7 +45,7 @@ function getReadProvider(): ethers.JsonRpcProvider {
 function getReadContract(): ethers.Contract | null {
   if (!CONTRACT_ADDRESS) return null;
   const provider = getReadProvider();
-  return new ethers.Contract(CONTRACT_ADDRESS, ARCTRUST_ABI, provider);
+  return new ethers.Contract(CONTRACT_ADDRESS, ARCGRADE_ABI, provider);
 }
 
 // Get score from on-chain (returns null if contract not deployed yet)
@@ -73,7 +73,7 @@ export async function writeScoreOnChain(
 ): Promise<string | null> {
   try {
     if (!CONTRACT_ADDRESS) return null;
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, ARCTRUST_ABI, signer);
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, ARCGRADE_ABI, signer);
     const tx = await contract.updateScore(walletAddress, score);
     await tx.wait();
     return tx.hash;

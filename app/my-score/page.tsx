@@ -81,7 +81,7 @@ export default function MyScorePage() {
   const shareOnX = () => {
     if (!result) return;
     const text = encodeURIComponent(
-      `🔐 My Arc Testnet wallet trust score: ${result.score}/100 — ${result.trustLevel}\n\nCheck yours on ArcTrust 👇`
+      `🔐 My Arc Testnet wallet trust score: ${result.score}/100 — ${result.trustLevel}\n\nCheck yours on ArcGrade 👇`
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
   };

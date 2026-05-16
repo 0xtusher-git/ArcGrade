@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/// @title ArcTrust — On-Chain Reputation Score Storage
+/// @title ArcGrade — On-Chain Reputation Score Storage
 /// @notice Stores AI-computed trust scores (0-100) for wallet addresses on Arc Testnet
 /// @dev Only the authorized updater address can write scores; anyone can read them
-contract ArcTrust {
+contract ArcGrade {
 
     // ─── State ────────────────────────────────────────────────────────────────
 
@@ -39,14 +39,14 @@ contract ArcTrust {
     // ─── Modifiers ────────────────────────────────────────────────────────────
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "ArcTrust: not owner");
+        require(msg.sender == owner, "ArcGrade: not owner");
         _;
     }
 
     modifier onlyUpdater() {
         require(
             msg.sender == updater || msg.sender == owner,
-            "ArcTrust: not authorized updater"
+            "ArcGrade: not authorized updater"
         );
         _;
     }
@@ -64,8 +64,8 @@ contract ArcTrust {
     /// @param wallet  The wallet address to score
     /// @param score   Trust score (must be 0-100)
     function updateScore(address wallet, uint256 score) external onlyUpdater {
-        require(wallet != address(0), "ArcTrust: zero address");
-        require(score <= 100, "ArcTrust: score out of range");
+        require(wallet != address(0), "ArcGrade: zero address");
+        require(score <= 100, "ArcGrade: score out of range");
 
         // Track new wallets
         if (scores[wallet].lastUpdated == 0) {
@@ -80,7 +80,7 @@ contract ArcTrust {
     /// @param _contractAddress The address of the deployed contract
     /// @param _templateName    The name of the template used (or 'Custom')
     function recordDeployment(address _contractAddress, string memory _templateName) external {
-        require(_contractAddress != address(0), "ArcTrust: zero address");
+        require(_contractAddress != address(0), "ArcGrade: zero address");
         
         deployments.push(Deployment({
             contractAddress: _contractAddress,
@@ -165,14 +165,14 @@ contract ArcTrust {
 
     /// @notice Change the authorized updater address
     function setUpdater(address newUpdater) external onlyOwner {
-        require(newUpdater != address(0), "ArcTrust: zero address");
+        require(newUpdater != address(0), "ArcGrade: zero address");
         emit UpdaterChanged(updater, newUpdater);
         updater = newUpdater;
     }
 
     /// @notice Transfer contract ownership
     function transferOwnership(address newOwner) external onlyOwner {
-        require(newOwner != address(0), "ArcTrust: zero address");
+        require(newOwner != address(0), "ArcGrade: zero address");
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
     }

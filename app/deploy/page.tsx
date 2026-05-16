@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { ethers } from 'ethers';
 import Navbar from '@/components/Navbar';
 import { useWallet } from '@/hooks/useWallet';
-import { getNativeBalance, USDC_ADDRESS, ARC_TESTNET_CONFIG, ARCTRUST_ABI } from '@/lib/contract';
+import { getNativeBalance, USDC_ADDRESS, ARC_TESTNET_CONFIG, ARCGRADE_ABI } from '@/lib/contract';
 import { CONTRACT_TEMPLATES, ContractTemplate } from '@/lib/templates';
 import { shortenAddress, getBadge, getScoreColor } from '@/lib/scoring';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -55,7 +55,7 @@ export default function DeployPage() {
       const contractAddr = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
       if (!contractAddr) return;
       
-      const contract = new ethers.Contract(contractAddr, ARCTRUST_ABI, provider);
+      const contract = new ethers.Contract(contractAddr, ARCGRADE_ABI, provider);
       const list = await contract.getRecentDeployments(5);
       setRecentDeployments(list.map((d: any) => ({
         contractAddress: d.contractAddress,
@@ -105,12 +105,12 @@ export default function DeployPage() {
 
       const provider = new ethers.BrowserProvider(window.ethereum!);
       const signer = await provider.getSigner();
-      const arcTrustAddr = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
-      const arcTrust = new ethers.Contract(arcTrustAddr, ARCTRUST_ABI, signer);
+      const arcGradeAddr = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
+      const arcGrade = new ethers.Contract(arcGradeAddr, ARCGRADE_ABI, signer);
 
       // 1. Pay 1 USDC Fee to Owner (Native Transfer on Arc)
       setDeployStatus('Initializing payment of 1 USDC...');
-      const ownerAddress = await arcTrust.owner();
+      const ownerAddress = await arcGrade.owner();
 
       try {
         setDeployStatus('Sending 1 USDC fee to owner...');
@@ -145,10 +145,10 @@ export default function DeployPage() {
       const addr = await contract.getAddress();
       setDeployedAddress(addr);
       
-      // 2. Record Deployment in ArcTrust
-      if (arcTrustAddr) {
+      // 2. Record Deployment in ArcGrade
+      if (arcGradeAddr) {
         setDeployStatus('Recording on-chain metadata...');
-        const recordTx = await arcTrust.recordDeployment(addr, selectedTemplate?.name || 'Custom');
+        const recordTx = await arcGrade.recordDeployment(addr, selectedTemplate?.name || 'Custom');
         await recordTx.wait();
       }
 

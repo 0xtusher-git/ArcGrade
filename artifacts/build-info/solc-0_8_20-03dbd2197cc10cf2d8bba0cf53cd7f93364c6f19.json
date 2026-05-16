@@ -1,0 +1,42 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_20-03dbd2197cc10cf2d8bba0cf53cd7f93364c6f19",
+  "solcVersion": "0.8.20",
+  "solcLongVersion": "0.8.20+commit.a1b79de6",
+  "compilerType": "solc",
+  "userSourceNameMap": {
+    "contracts/ArcGrade.sol": "project/contracts/ArcGrade.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "shanghai",
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/ArcGrade.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\n/// @title ArcGrade — On-Chain Reputation Score Storage\n/// @notice Stores AI-computed trust scores (0-100) for wallet addresses on Arc Testnet\n/// @dev Only the authorized updater address can write scores; anyone can read them\ncontract ArcGrade {\n\n    // ─── State ────────────────────────────────────────────────────────────────\n\n    address public owner;\n    address public updater; // The authorized backend/AI address that can write scores\n\n    struct ScoreData {\n        uint256 score;       // 0-100\n        uint256 lastUpdated; // Unix timestamp\n    }\n\n    mapping(address => ScoreData) private scores;\n    address[] private scoredWallets; // Track all wallets that have been scored\n\n    struct Deployment {\n        address contractAddress;\n        string templateName;\n        uint256 timestamp;\n        address deployer;\n    }\n\n    Deployment[] private deployments;\n    mapping(address => uint256) public deployCount;\n\n    // ─── Events ───────────────────────────────────────────────────────────────\n\n    event ScoreUpdated(address indexed wallet, uint256 score, uint256 timestamp);\n    event UpdaterChanged(address indexed oldUpdater, address indexed newUpdater);\n    event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);\n    event ContractDeployed(address indexed deployer, address indexed contractAddress, string templateName);\n\n    // ─── Modifiers ────────────────────────────────────────────────────────────\n\n    modifier onlyOwner() {\n        require(msg.sender == owner, \"ArcGrade: not owner\");\n        _;\n    }\n\n    modifier onlyUpdater() {\n        require(\n            msg.sender == updater || msg.sender == owner,\n            \"ArcGrade: not authorized updater\"\n        );\n        _;\n    }\n\n    // ─── Constructor ──────────────────────────────────────────────────────────\n\n    constructor() {\n        owner   = msg.sender;\n        updater = msg.sender; // Initially owner is also the updater\n    }\n\n    // ─── Write Functions ──────────────────────────────────────────────────────\n\n    /// @notice Store or update the trust score for a wallet\n    /// @param wallet  The wallet address to score\n    /// @param score   Trust score (must be 0-100)\n    function updateScore(address wallet, uint256 score) external onlyUpdater {\n        require(wallet != address(0), \"ArcGrade: zero address\");\n        require(score <= 100, \"ArcGrade: score out of range\");\n\n        // Track new wallets\n        if (scores[wallet].lastUpdated == 0) {\n            scoredWallets.push(wallet);\n        }\n\n        scores[wallet] = ScoreData({ score: score, lastUpdated: block.timestamp });\n        emit ScoreUpdated(wallet, score, block.timestamp);\n    }\n\n    /// @notice Record a new contract deployment\n    /// @param _contractAddress The address of the deployed contract\n    /// @param _templateName    The name of the template used (or 'Custom')\n    function recordDeployment(address _contractAddress, string memory _templateName) external {\n        require(_contractAddress != address(0), \"ArcGrade: zero address\");\n        \n        deployments.push(Deployment({\n            contractAddress: _contractAddress,\n            templateName: _templateName,\n            timestamp: block.timestamp,\n            deployer: msg.sender\n        }));\n        \n        deployCount[msg.sender]++;\n        \n        emit ContractDeployed(msg.sender, _contractAddress, _templateName);\n    }\n\n    /// @notice Withdraw accumulated fees (owner only)\n    function withdrawFees() external onlyOwner {\n        payable(owner).transfer(address(this).balance);\n    }\n\n    // ─── Read Functions ───────────────────────────────────────────────────────\n\n    /// @notice Get the trust score for any wallet\n    /// @param wallet The wallet address to query\n    /// @return score The trust score (0-100), 0 if never scored\n    /// @return lastUpdated Unix timestamp of last score update, 0 if never scored\n    function getScore(address wallet) external view returns (uint256 score, uint256 lastUpdated) {\n        ScoreData memory data = scores[wallet];\n        return (data.score, data.lastUpdated);\n    }\n\n    /// @notice Check if a wallet has been scored\n    function hasScore(address wallet) external view returns (bool) {\n        return scores[wallet].lastUpdated > 0;\n    }\n\n    /// @notice Get total number of wallets scored\n    function totalScored() external view returns (uint256) {\n        return scoredWallets.length;\n    }\n\n    /// @notice Get a batch of scored wallet addresses (for leaderboard indexing)\n    /// @param offset Starting index\n    /// @param limit  Max results to return\n    function getScoredWallets(uint256 offset, uint256 limit)\n        external\n        view\n        returns (address[] memory)\n    {\n        uint256 total = scoredWallets.length;\n        if (offset >= total) return new address[](0);\n        uint256 end = offset + limit > total ? total : offset + limit;\n        address[] memory result = new address[](end - offset);\n        for (uint256 i = offset; i < end; i++) {\n            result[i - offset] = scoredWallets[i];\n        }\n        return result;\n    }\n\n    /// @notice Get total number of deployments recorded\n    function totalDeployments() external view returns (uint256) {\n        return deployments.length;\n    }\n\n    /// @notice Get recent deployments\n    /// @param limit Max number of deployments to return\n    function getRecentDeployments(uint256 limit)\n        external\n        view\n        returns (Deployment[] memory)\n    {\n        uint256 total = deployments.length;\n        uint256 count = limit > total ? total : limit;\n        Deployment[] memory result = new Deployment[](count);\n        \n        for (uint256 i = 0; i < count; i++) {\n            result[i] = deployments[total - 1 - i];\n        }\n        return result;\n    }\n\n\n    // ─── Admin Functions ──────────────────────────────────────────────────────\n\n    /// @notice Change the authorized updater address\n    function setUpdater(address newUpdater) external onlyOwner {\n        require(newUpdater != address(0), \"ArcGrade: zero address\");\n        emit UpdaterChanged(updater, newUpdater);\n        updater = newUpdater;\n    }\n\n    /// @notice Transfer contract ownership\n    function transferOwnership(address newOwner) external onlyOwner {\n        require(newOwner != address(0), \"ArcGrade: zero address\");\n        emit OwnershipTransferred(owner, newOwner);\n        owner = newOwner;\n    }\n}\n"
+      }
+    }
+  }
+}

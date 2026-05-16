@@ -16,9 +16,9 @@ async function main() {
   const provider = new ethers.JsonRpcProvider(RPC_URL);
   const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
-  console.log("Deploying ArcTrust with account:", wallet.address);
+  console.log("Deploying ArcGrade with account:", wallet.address);
 
-  const artifact = JSON.parse(fs.readFileSync("./artifacts/contracts/ArcTrust.sol/ArcTrust.json", "utf8"));
+  const artifact = JSON.parse(fs.readFileSync("./artifacts/contracts/ArcGrade.sol/ArcGrade.json", "utf8"));
   const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
 
   const contract = await factory.deploy();
@@ -26,7 +26,7 @@ async function main() {
   await contract.waitForDeployment();
 
   const address = await contract.getAddress();
-  console.log("ArcTrust deployed to:", address);
+  console.log("ArcGrade deployed to:", address);
 }
 
 main().catch(console.error);
