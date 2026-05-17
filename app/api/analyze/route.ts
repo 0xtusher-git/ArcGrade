@@ -5,10 +5,20 @@ import { computeScore, getTrustLevel } from '@/lib/scoring';
 
 const anthropic = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY ?? '' });
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { address } = await req.json();
-    if (!address) return NextResponse.json({ error: 'Address required' }, { status: 400 });
+    if (!address) return NextResponse.json({ error: 'Address required' }, { status: 400, headers: corsHeaders });
 
     // 1. Fetch on-chain data
     const walletData = await fetchWalletData(address);
@@ -69,9 +79,9 @@ Second sentence: give the overall verdict and recommendation for trusting this w
         isReal: walletData.isReal,
         transactions: walletData.transactions.slice(0, 10), // Send last 10 for UI
       },
-    });
+    }, { headers: corsHeaders });
   } catch (err) {
     console.error('/api/analyze error:', err);
-    return NextResponse.json({ error: 'Analysis failed' }, { status: 500 });
+    return NextResponse.json({ error: 'Analysis failed' }, { status: 500, headers: corsHeaders });
   }
 }
