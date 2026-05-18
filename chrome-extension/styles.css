@@ -1,0 +1,210 @@
+/* ArcGrade Extension Injected Styles */
+
+#arcgrade-extension-root {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999999;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  pointer-events: none; /* Let clicks pass through the root container */
+}
+
+.arcgrade-badge {
+  pointer-events: auto; /* Re-enable clicks for the badge itself */
+  width: 320px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(20, 184, 166, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(20, 184, 166, 0.1);
+  overflow: hidden;
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(20px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.arcgrade-badge.arcgrade-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Header */
+.arcgrade-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.arcgrade-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #2dd4bf;
+}
+
+.arcgrade-logo-small {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+
+.arcgrade-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arcgrade-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* Content Area */
+.arcgrade-content {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Loading & Error States */
+.arcgrade-loading, .arcgrade-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.arcgrade-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(20, 184, 166, 0.2);
+  border-top-color: #14b8a6;
+  border-radius: 50%;
+  animation: arcgrade-spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes arcgrade-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Address Badge */
+.arcgrade-address-badge {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #cbd5e1;
+  margin-bottom: 16px;
+  letter-spacing: 0.5px;
+}
+
+/* Score Header */
+.arcgrade-score-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.arcgrade-trust-level {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.arcgrade-score-number {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.arcgrade-score-max {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Progress Bar */
+.arcgrade-progress-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.arcgrade-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Colored Levels */
+.arcgrade-level-Trusted { color: #2dd4bf; }
+.arcgrade-level-Neutral { color: #fbbf24; }
+.arcgrade-level-Suspicious { color: #f87171; }
+
+.arcgrade-bg-Trusted { background-color: #2dd4bf; }
+.arcgrade-bg-Neutral { background-color: #fbbf24; }
+.arcgrade-bg-Suspicious { background-color: #f87171; }
+
+.arcgrade-border-Trusted { border-left-color: #2dd4bf; }
+.arcgrade-border-Neutral { border-left-color: #fbbf24; }
+.arcgrade-border-Suspicious { border-left-color: #f87171; }
+
+/* Verdict */
+.arcgrade-verdict {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  margin-bottom: 16px;
+  background: rgba(0,0,0,0.2);
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 2px solid var(--ring-color, #14b8a6);
+}
+
+/* Button */
+.arcgrade-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  background: #14b8a6;
+  color: #000;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.arcgrade-btn:hover {
+  background: #0d9488;
+  transform: translateY(-1px);
+}
