@@ -16,6 +16,7 @@ export default function Navbar() {
     { href: '/leaderboard', label: 'Leaderboard' },
     { href: '/challenge', label: 'Challenge' },
     { href: '/deploy', label: 'Deploy' },
+    { href: '/api-docs', label: 'API' },
     { href: '/my-score', label: 'My Score' },
   ];
 
