@@ -67,12 +67,12 @@ export function getScoreLabel(score: number): string {
   return 'Unknown';
 }
 
-export function getBadge(score: number): { label: string; emoji: string; cls: string } {
-  if (score >= 90) return { label: 'Elite',     emoji: '🥇', cls: 'badge-elite'     };
-  if (score >= 75) return { label: 'Trusted',   emoji: '🌟', cls: 'badge-trusted'   };
-  if (score >= 50) return { label: 'Neutral',   emoji: '✅', cls: 'badge-neutral'   };
-  if (score >= 25) return { label: 'Risky',     emoji: '⚠️', cls: 'badge-risky'     };
-  return               { label: 'Untrusted', emoji: '❌', cls: 'badge-untrusted' };
+export function getBadge(score: number): { label: string; cls: string } {
+  if (score >= 90) return { label: 'Elite',     cls: 'badge-elite'     };
+  if (score >= 75) return { label: 'Trusted',   cls: 'badge-trusted'   };
+  if (score >= 50) return { label: 'Neutral',   cls: 'badge-neutral'   };
+  if (score >= 25) return { label: 'Risky',     cls: 'badge-risky'     };
+  return               { label: 'Untrusted', cls: 'badge-untrusted' };
 }
 
 export function shortenAddress(addr: string): string {

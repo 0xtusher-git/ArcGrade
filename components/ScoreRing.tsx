@@ -44,12 +44,6 @@ export default function ScoreRing({ score, size = 200, animate = true }: ScoreRi
 
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
-      {/* Glow effect behind ring */}
-      <div
-        className="absolute inset-0 rounded-full blur-2xl opacity-30 pointer-events-none"
-        style={{ background: color }}
-      />
-
       {/* SVG ring */}
       <svg
         width={size}
@@ -63,7 +57,7 @@ export default function ScoreRing({ score, size = 200, animate = true }: ScoreRi
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
+          stroke="rgba(255,255,255,0.08)"
           strokeWidth={10}
         />
         {/* Score arc */}
@@ -77,28 +71,28 @@ export default function ScoreRing({ score, size = 200, animate = true }: ScoreRi
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
-          style={{ transition: 'stroke-dashoffset 0.05s linear', filter: `drop-shadow(0 0 8px ${color})` }}
+          style={{ transition: 'stroke-dashoffset 0.05s linear' }}
         />
       </svg>
 
       {/* Center content */}
       <div className="relative z-10 flex flex-col items-center justify-center">
         <span
-          className="font-black leading-none"
+          className="font-mono font-bold leading-none tabular-nums"
           style={{ fontSize: size * 0.28, color }}
         >
           {displayed}
         </span>
-        <span className="text-white/50 font-medium mt-1" style={{ fontSize: size * 0.09 }}>
+        <span className="mt-1 font-mono font-medium text-slate-500" style={{ fontSize: size * 0.09 }}>
           / 100
         </span>
         <span
-          className="font-semibold mt-2 px-3 py-0.5 rounded-full"
+          className="mt-2 rounded-full px-3 py-0.5 font-semibold"
           style={{
             fontSize: size * 0.08,
-            background: `${color}22`,
+            background: `${color}1a`,
             color,
-            border: `1px solid ${color}44`,
+            border: `1px solid ${color}33`,
           }}
         >
           {label}

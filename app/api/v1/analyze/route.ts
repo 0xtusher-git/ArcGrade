@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     let verdict: string = trustLevel; // Fallback to simple trust level
 
     // Prompt for AI analysis
-    const prompt = `You are an on-chain reputation analyst for Arc Testnet.
+    const prompt = `You are an on-chain reputation analyst for Arc Mainnet.
 Wallet: ${address}
 Trust Score: ${breakdown.total}/100
 Trust Level: ${trustLevel}
@@ -48,7 +48,7 @@ Write exactly 1 sentence giving the overall verdict and recommendation for trust
           model: 'claude-3-5-sonnet-latest',
           max_tokens: 150,
           messages: [{ role: 'user', content: prompt }],
-        });
+        }, { signal: AbortSignal.timeout(8000) });
         verdict = (msg.content[0] as { text: string }).text.trim();
       }
     } catch {

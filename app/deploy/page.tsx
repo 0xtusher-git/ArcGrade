@@ -4,10 +4,11 @@ import { useRouter } from 'next/navigation';
 import { ethers } from 'ethers';
 import Navbar from '@/components/Navbar';
 import { useWallet } from '@/hooks/useWallet';
-import { getNativeBalance, USDC_ADDRESS, ARC_TESTNET_CONFIG, ARCGRADE_ABI } from '@/lib/contract';
+import { getNativeBalance, USDC_ADDRESS, ARC_MAINNET_CONFIG, ARCGRADE_ABI } from '@/lib/contract';
 import { CONTRACT_TEMPLATES, ContractTemplate } from '@/lib/templates';
 import { shortenAddress, getBadge, getScoreColor } from '@/lib/scoring';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Wallet, Warning, Rocket, CheckCircle, ArrowRight, ArrowLeft, FileCode, Trophy } from '@phosphor-icons/react';
 
 // ABI for a generic contract deployment (constructor) is not needed, 
 // we use ContractFactory.
@@ -51,7 +52,7 @@ export default function DeployPage() {
   // Load Recent Deployments
   const fetchRecent = useCallback(async () => {
     try {
-      const provider = new ethers.JsonRpcProvider(ARC_TESTNET_CONFIG.rpcUrls[0]);
+      const provider = new ethers.JsonRpcProvider(ARC_MAINNET_CONFIG.rpcUrls[0]);
       const contractAddr = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
       if (!contractAddr) return;
       
@@ -197,34 +198,34 @@ export default function DeployPage() {
 
   const shareOnX = () => {
     const text = encodeURIComponent(
-      `I just deployed a smart contract on Arc Testnet and my trust score jumped to ${newScore}! Check yours at arc-grade.vercel.app #ArcGrade #ArcTestnet`
+      `I just deployed a smart contract on Arc and my trust score jumped to ${newScore}! Check yours at arc-grade.vercel.app #ArcGrade #Arc`
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4">
+    <div className="min-h-screen px-4 pb-16 pt-32">
       <Navbar />
       
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-black text-white mb-4">
-            Deploy on <span className="text-teal-light">Arc</span>
+          <h1 className="mb-4 text-4xl font-extrabold tracking-tight text-white md:text-5xl">
+            Deploy on <span className="text-teal">Arc</span>
           </h1>
-          <p className="text-white/60 text-lg">
+          <p className="text-slate-500 text-lg">
             Launch smart contracts in seconds. Boost your trust score automatically.
           </p>
         </div>
 
         {/* Step Progress */}
         <div className="flex items-center justify-between mb-12 px-4 md:px-20 relative">
-          <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/10 -translate-y-1/2 z-0" />
+          <div className="absolute top-1/2 left-4 right-4 h-px bg-white/10 -translate-y-1/2 z-0" />
           {[1, 2, 3, 4].map((s) => (
             <div 
               key={s} 
-              className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-500 ${
-                step >= s ? 'bg-teal-light text-navy shadow-[0_0_15px_rgba(74,154,186,0.5)]' : 'bg-navy border-2 border-white/10 text-white/40'
+              className={`relative z-10 w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-300 ${
+                step >= s ? 'bg-teal text-[#04121a]' : 'bg-[#060b16] border border-white/15 text-slate-500'
               }`}
             >
               {s}
@@ -242,12 +243,12 @@ export default function DeployPage() {
               exit={{ opacity: 0, y: -20 }}
               className="glass-card p-8 md:p-12 text-center"
             >
-              <div className="w-20 h-20 bg-teal-light/10 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-6">
-                🦊
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.08] bg-teal/10 text-teal">
+                <Wallet size={30} weight="duotone" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-4">Connect Your Wallet</h2>
-              <p className="text-white/50 mb-8 max-w-md mx-auto">
-                Connect MetaMask to Arc Testnet to start deploying. We'll automatically check your USDC balance.
+              <h2 className="text-2xl font-semibold text-slate-100 mb-4">Connect Your Wallet</h2>
+              <p className="text-slate-500 mb-8 max-w-md mx-auto">
+                Connect MetaMask to Arc to start deploying. We&apos;ll automatically check your USDC balance.
               </p>
 
               {!isConnected ? (
@@ -262,29 +263,26 @@ export default function DeployPage() {
                 <div className="space-y-4">
                   <p className="text-red-400 font-medium">Wrong Network!</p>
                   <button onClick={switchNetwork} className="btn-primary px-10 py-4">
-                    Switch to Arc Testnet
+                    Switch to Arc
                   </button>
                 </div>
               ) : (
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-                    <div className="glass-card p-4 bg-white/5">
-                      <div className="text-xs text-white/40 mb-1 uppercase tracking-wider">Wallet</div>
-                      <div className="font-mono text-white">{shortenAddress(address!)}</div>
+                    <div className="glass-card p-4">
+                      <div className="text-[11px] text-slate-500 mb-1 uppercase tracking-wider">Wallet</div>
+                      <div className="font-mono text-sm text-slate-200">{shortenAddress(address!)}</div>
                     </div>
-                    <div className="glass-card p-4 bg-white/5">
-                      <div className="text-xs text-white/40 mb-1 uppercase tracking-wider">Balance</div>
-                      <div className="font-bold text-teal-light">{parseFloat(usdcBalance).toFixed(2)} USDC</div>
+                    <div className="glass-card p-4">
+                      <div className="text-[11px] text-slate-500 mb-1 uppercase tracking-wider">Balance</div>
+                      <div className="font-semibold text-slate-200 tabular-nums">{parseFloat(usdcBalance).toFixed(2)} USDC</div>
                     </div>
                   </div>
 
-                  
                   {parseFloat(usdcBalance) < 1.0 && (
-                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-200 text-sm max-w-md mx-auto">
-                      ⚠️ Insufficient USDC balance. Get test USDC from the 
-                      <a href="https://faucet.circle.com/" target="_blank" className="underline ml-1 hover:text-white font-bold">
-                        faucet
-                      </a>
+                    <div className="p-4 bg-red-500/[0.06] border border-red-500/20 rounded-lg text-red-300 text-sm max-w-md mx-auto flex items-start gap-2">
+                      <Warning size={16} weight="duotone" className="mt-0.5 shrink-0" />
+                      <span>Insufficient USDC balance. Please ensure your wallet has enough USDC.</span>
                     </div>
                   )}
 
@@ -311,28 +309,32 @@ export default function DeployPage() {
                     key={t.id}
                     onClick={() => { setSelectedTemplate(t); setCustomCode(''); }}
                     className={`glass-card p-6 text-left transition-all duration-300 group ${
-                      selectedTemplate?.id === t.id ? 'border-teal-light bg-teal-light/5' : 'hover:border-white/20'
+                      selectedTemplate?.id === t.id ? 'border-teal/40 bg-teal/[0.04]' : 'hover:border-white/20'
                     }`}
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-lg font-bold text-white group-hover:text-teal-light transition-colors">{t.name}</h3>
-                      <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
-                        t.difficulty === 'Easy' ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'
+                      <h3 className="text-lg font-semibold text-slate-100 group-hover:text-white transition-colors flex items-center gap-2">
+                        <FileCode size={16} weight="duotone" className="text-slate-500" /> {t.name}
+                      </h3>
+                      <span className={`text-[10px] px-2 py-0.5 rounded border font-semibold uppercase ${
+                        t.difficulty === 'Easy'
+                          ? 'bg-emerald-400/[0.06] text-emerald-300 border-emerald-400/20'
+                          : 'bg-amber-400/[0.06] text-amber-300 border-amber-400/20'
                       }`}>
                         {t.difficulty}
                       </span>
                     </div>
-                    <p className="text-white/50 text-sm leading-relaxed">{t.description}</p>
+                    <p className="text-slate-500 text-sm leading-relaxed">{t.description}</p>
                   </button>
                 ))}
               </div>
 
               <div className="glass-card p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-white font-bold">Contract Code</h3>
+                  <h3 className="text-slate-200 font-semibold text-sm uppercase tracking-wider">Contract Code</h3>
                   <button 
                     onClick={() => { setSelectedTemplate(null); setCustomCode(''); }}
-                    className="text-xs text-white/40 hover:text-white transition-colors"
+                    className="text-xs text-slate-500 hover:text-white transition-colors"
                   >
                     Reset to Custom
                   </button>
@@ -343,14 +345,14 @@ export default function DeployPage() {
                     if (!selectedTemplate) setCustomCode(e.target.value);
                   }}
                   readOnly={!!selectedTemplate}
-                  className="w-full h-64 bg-navy/50 border border-white/10 rounded-xl p-4 font-mono text-sm text-white/80 outline-none focus:border-teal-light/50 transition-colors resize-none"
+                  className="w-full h-64 bg-white/[0.03] border border-white/10 rounded-lg p-4 font-mono text-sm text-slate-300 outline-none focus:border-white/25 transition-colors resize-none"
                   placeholder="// Paste your custom Solidity code here..."
                 />
               </div>
 
               <div className="flex justify-between items-center">
-                <button onClick={() => setStep(1)} className="text-white/40 hover:text-white transition-colors">
-                  ← Back
+                <button onClick={() => setStep(1)} className="text-slate-500 hover:text-white transition-colors flex items-center gap-1.5 text-sm">
+                  <ArrowLeft size={16} weight="bold" /> Back
                 </button>
                 <button 
                   onClick={() => setStep(3)} 
@@ -373,47 +375,47 @@ export default function DeployPage() {
               className="glass-card p-8 md:p-12 text-center"
             >
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-white mb-2">Ready to Launch?</h2>
-                <p className="text-white/50">Review the deployment details below.</p>
+                <h2 className="text-2xl font-semibold text-slate-100 mb-2">Ready to Launch?</h2>
+                <p className="text-slate-500">Review the deployment details below.</p>
               </div>
 
               <div className="max-w-md mx-auto space-y-4 mb-10">
                 <div className="flex justify-between py-3 border-b border-white/5">
-                  <span className="text-white/40">Contract Type</span>
-                  <span className="text-white font-medium">{selectedTemplate?.name || 'Custom Contract'}</span>
+                  <span className="text-slate-500 text-sm">Contract Type</span>
+                  <span className="text-slate-200 font-medium text-sm">{selectedTemplate?.name || 'Custom Contract'}</span>
                 </div>
                 <div className="flex justify-between py-3 border-b border-white/5">
-                  <span className="text-white/40">Network</span>
-                  <span className="text-white font-medium">Arc Testnet</span>
+                  <span className="text-slate-500 text-sm">Network</span>
+                  <span className="text-slate-200 font-medium text-sm">Arc Mainnet</span>
                 </div>
                 <div className="flex justify-between py-3 border-b border-white/5">
-                  <span className="text-white/40">Estimated Gas</span>
-                  <span className="text-white font-medium">~0.005 USDC</span>
+                  <span className="text-slate-500 text-sm">Estimated Gas</span>
+                  <span className="text-slate-200 font-medium text-sm tabular-nums">~0.005 USDC</span>
                 </div>
                 <div className="flex justify-between py-3 border-b border-white/5">
-                  <span className="text-white/40 font-bold">Deployment Fee</span>
-                  <span className="text-teal-light font-black">1.00 USDC</span>
+                  <span className="text-slate-500 font-medium text-sm">Deployment Fee</span>
+                  <span className="text-slate-100 font-bold text-sm tabular-nums">1.00 USDC</span>
                 </div>
               </div>
 
               {isDeploying ? (
                 <div className="space-y-6">
-                  <div className="w-16 h-16 border-4 border-white/10 border-t-teal-light rounded-full animate-spin mx-auto" />
-                  <div className="text-lg font-medium text-white animate-pulse">{deployStatus}</div>
-                  <p className="text-white/40 text-sm">Please confirm the transactions in MetaMask.</p>
+                  <div className="w-14 h-14 border-4 border-white/10 border-t-slate-200 rounded-full animate-spin mx-auto" />
+                  <div className="text-base font-medium text-slate-200">{deployStatus}</div>
+                  <p className="text-slate-500 text-sm">Please confirm the transactions in MetaMask.</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
                   <button 
                     onClick={handleDeploy} 
                     disabled={parseFloat(usdcBalance) < 1.0}
-                    className="btn-primary py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn-primary py-3.5 text-base disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {parseFloat(usdcBalance) < 1.0 
                       ? 'Insufficient USDC' 
-                      : 'Deploy Contract (1 USDC) 🚀'}
+                      : (<span className="flex items-center gap-2"><Rocket size={16} weight="bold" /> Deploy Contract (1 USDC)</span>)}
                   </button>
-                  <button onClick={() => setStep(2)} className="text-white/40 hover:text-white transition-colors text-sm">
+                  <button onClick={() => setStep(2)} className="text-slate-500 hover:text-white transition-colors text-sm">
                     Edit Code
                   </button>
                 </div>
@@ -432,38 +434,38 @@ export default function DeployPage() {
             >
               <div className="glass-card p-10 text-center relative overflow-hidden">
                 <div className="relative z-10">
-                  <div className="w-20 h-20 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
-                    ✅
+                  <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-400">
+                    <CheckCircle size={28} weight="duotone" />
                   </div>
-                  <h2 className="text-3xl font-black text-white mb-2">Deployment Successful!</h2>
-                  <p className="text-white/50 mb-8">Your contract is live on Arc Testnet.</p>
+                  <h2 className="text-3xl font-semibold text-slate-100 mb-2 tracking-tight">Deployment Successful!</h2>
+                  <p className="text-slate-500 mb-8">Your contract is live on Arc Mainnet.</p>
                   
-                  <div className="glass-card bg-white/5 p-4 inline-block mb-10 font-mono text-xs text-teal-light">
+                  <div className="glass-card p-4 inline-block mb-10 font-mono text-xs text-slate-300">
                     {deployedAddress}
                     <a 
-                      href={`https://testnet.arcscan.app/address/${deployedAddress}`}
+                      href={`https://abscan.org/address/${deployedAddress}`}
                       target="_blank"
-                      className="ml-3 text-white/40 hover:text-white transition-colors"
+                      className="ml-3 text-slate-500 hover:text-white transition-colors inline-flex items-center gap-1"
                     >
-                      View on Explorer ↗
+                      View on Explorer
                     </a>
                   </div>
 
                   <div className="border-t border-white/10 pt-10">
-                    <h3 className="text-xl font-bold text-white mb-6">Reputation Updated</h3>
-                    <div className="flex items-center justify-center gap-12 mb-8">
+                    <h3 className="text-lg font-semibold text-slate-200 mb-6">Reputation Updated</h3>
+                    <div className="flex items-center justify-center gap-10 mb-8">
                       <div className="text-center">
-                        <div className="text-white/30 text-xs uppercase mb-2">Previous Score</div>
-                        <div className="text-4xl font-black text-white/40 line-through">{oldScore ?? '--'}</div>
+                        <div className="text-slate-600 text-xs uppercase mb-2 tracking-wider">Previous Score</div>
+                        <div className="text-4xl font-bold text-slate-600 line-through tabular-nums">{oldScore ?? '--'}</div>
                       </div>
-                      <div className="text-4xl">→</div>
+                      <ArrowRight size={22} weight="bold" className="text-slate-600" />
                       <div className="text-center">
-                        <div className="text-teal-light text-xs uppercase mb-2 font-bold animate-pulse">New Score</div>
+                        <div className="text-slate-400 text-xs uppercase mb-2 font-semibold tracking-wider">New Score</div>
                         <motion.div 
                           initial={{ scale: 0.5 }}
                           animate={{ scale: 1 }}
                           transition={{ type: 'spring', damping: 10 }}
-                          className="text-6xl font-black text-teal-light"
+                          className="text-6xl font-bold text-slate-100 tabular-nums"
                         >
                           {newScore ?? '--'}
                         </motion.div>
@@ -471,9 +473,9 @@ export default function DeployPage() {
                     </div>
 
                     {analysisResult && (
-                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-light/10 border border-teal-light/20 rounded-full mb-8">
-                         <span className="text-xl">{getBadge(newScore || 0).emoji}</span>
-                         <span className="font-bold text-white uppercase tracking-tighter text-sm">
+                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.04] border border-white/10 rounded-md mb-8">
+                         <Trophy size={15} weight="duotone" className="text-amber-400" />
+                         <span className="font-semibold text-slate-200 uppercase tracking-wide text-xs">
                            {getBadge(newScore || 0).label} Badge Earned
                          </span>
                       </div>
@@ -499,7 +501,7 @@ export default function DeployPage() {
 
               <button 
                 onClick={() => { setStep(1); setSelectedTemplate(null); setDeployedAddress(''); }}
-                className="w-full py-4 text-white/40 hover:text-white transition-colors text-sm"
+                className="w-full py-4 text-slate-500 hover:text-white transition-colors text-sm"
               >
                 Deploy Another Contract
               </button>
@@ -510,12 +512,12 @@ export default function DeployPage() {
         {/* Recent Deployments */}
         <div className="mt-20">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Recent Deployments</h2>
-            <div className="text-xs text-white/30 uppercase tracking-widest">Global Feed</div>
+            <h2 className="text-xl font-semibold text-slate-200">Recent Deployments</h2>
+            <div className="text-[10px] text-slate-600 uppercase tracking-widest">Global Feed</div>
           </div>
           
           <div className="glass-card overflow-hidden">
-            <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-white/10 text-[10px] font-black uppercase tracking-widest text-white/30">
+            <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-white/10 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
               <div className="col-span-4">Contract</div>
               <div className="col-span-4">Deployer</div>
               <div className="col-span-4 text-right">Time</div>
@@ -523,27 +525,27 @@ export default function DeployPage() {
             
             <div className="divide-y divide-white/5">
               {recentDeployments.length === 0 ? (
-                <div className="px-6 py-10 text-center text-white/20 italic text-sm">
+                <div className="px-6 py-10 text-center text-slate-600 italic text-sm">
                   No deployments yet. Be the first!
                 </div>
               ) : (
                 recentDeployments.map((d, i) => (
-                  <div key={i} className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-white/5 transition-colors group">
+                  <div key={i} className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-white/[0.03] transition-colors group">
                     <div className="col-span-4">
-                      <div className="text-white font-bold text-sm group-hover:text-teal-light transition-colors">{d.templateName}</div>
+                      <div className="text-slate-200 font-medium text-sm group-hover:text-white transition-colors">{d.templateName}</div>
                       <a 
-                        href={`https://testnet.arcscan.app/address/${d.contractAddress}`}
+                        href={`https://abscan.org/address/${d.contractAddress}`}
                         target="_blank"
-                        className="font-mono text-[10px] text-white/30 hover:text-white/60 truncate block max-w-[120px]"
+                        className="font-mono text-[10px] text-slate-600 hover:text-slate-400 truncate block max-w-[120px]"
                       >
                         {shortenAddress(d.contractAddress)}
                       </a>
                     </div>
                     <div className="col-span-4">
-                      <div className="font-mono text-xs text-white/50">{shortenAddress(d.deployer)}</div>
+                      <div className="font-mono text-xs text-slate-500">{shortenAddress(d.deployer)}</div>
                     </div>
                     <div className="col-span-4 text-right">
-                      <div className="text-xs text-white/40">
+                      <div className="text-xs text-slate-600">
                         {new Date(d.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>

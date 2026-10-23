@@ -60,7 +60,7 @@ contract TokenCounter {
   {
     id: 'hello-world',
     name: 'Hello World',
-    description: 'Leave your mark on the Arc Testnet by storing a custom greeting message in a string.',
+    description: 'Leave your mark on the Arc Mainnet by storing a custom greeting message in a string.',
     difficulty: 'Easy',
     code: `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;

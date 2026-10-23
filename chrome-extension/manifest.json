@@ -9,11 +9,11 @@
   ],
   "host_permissions": [
     "https://arc-grade.vercel.app/*",
-    "*://testnet.arcscan.app/*"
+    "*://abscan.org/*"
   ],
   "content_scripts": [
     {
-      "matches": ["*://testnet.arcscan.app/*"],
+      "matches": ["*://abscan.org/*"],
       "js": ["content.js"],
       "css": ["styles.css"]
     }
@@ -34,7 +34,7 @@
   "web_accessible_resources": [
     {
       "resources": ["icons/*"],
-      "matches": ["*://testnet.arcscan.app/*"]
+      "matches": ["*://abscan.org/*"]
     }
   ]
 }

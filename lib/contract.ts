@@ -20,7 +20,7 @@ export const ARCGRADE_ABI = [
   'function totalDeployments() view returns (uint256)',
 ];
 
-// On Arc Testnet, USDC is the native token. 
+// On Arc Mainnet, ETH is the native token. 
 // A system contract exists at 0x36...000 for ERC20 compatibility.
 export const USDC_ADDRESS = '0x3600000000000000000000000000000000000000';
 export const ERC20_ABI = [
@@ -30,14 +30,14 @@ export const ERC20_ABI = [
 ];
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ?? '';
-const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ?? 'https://rpc.testnet.arc.network';
-const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID ?? '5042002', 10);
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ?? 'https://rpc.mainnet.arc.io';
+const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID ?? '5042', 10);
 
 // Read-only provider (no wallet needed)
 function getReadProvider(): ethers.JsonRpcProvider {
   return new ethers.JsonRpcProvider(RPC_URL, {
     chainId: CHAIN_ID,
-    name: 'arc-testnet',
+    name: 'arc-mainnet',
   });
 }
 
@@ -83,22 +83,22 @@ export async function writeScoreOnChain(
   }
 }
 
-// Arc Testnet network config for MetaMask
-export const ARC_TESTNET_CONFIG = {
+// Arc Mainnet network config for MetaMask
+export const ARC_MAINNET_CONFIG = {
   chainId: `0x${CHAIN_ID.toString(16)}`,
-  chainName: 'Arc Testnet',
-  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+  chainName: 'Arc Mainnet',
+  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
   rpcUrls: [RPC_URL],
-  blockExplorerUrls: ['https://testnet.arcscan.app'],
+  blockExplorerUrls: ['https://abscan.org'],
 };
 
-// Ask MetaMask to switch to / add Arc Testnet
-export async function switchToArcTestnet(): Promise<boolean> {
+// Ask MetaMask to switch to / add Arc Mainnet
+export async function switchToArcMainnet(): Promise<boolean> {
   if (typeof window === 'undefined' || !window.ethereum) return false;
   try {
     await window.ethereum.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: ARC_TESTNET_CONFIG.chainId }],
+      params: [{ chainId: ARC_MAINNET_CONFIG.chainId }],
     });
     return true;
   } catch (switchError: unknown) {
@@ -107,7 +107,7 @@ export async function switchToArcTestnet(): Promise<boolean> {
       try {
         await window.ethereum.request({
           method: 'wallet_addEthereumChain',
-          params: [ARC_TESTNET_CONFIG],
+          params: [ARC_MAINNET_CONFIG],
         });
         return true;
       } catch {

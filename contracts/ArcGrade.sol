@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /// @title ArcGrade — On-Chain Reputation Score Storage
-/// @notice Stores AI-computed trust scores (0-100) for wallet addresses on Arc Testnet
+/// @notice Stores AI-computed trust scores (0-100) for wallet addresses on Arc Mainnet
 /// @dev Only the authorized updater address can write scores; anyone can read them
 contract ArcGrade {
 

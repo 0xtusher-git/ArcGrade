@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { ethers } from 'ethers';
-import { switchToArcTestnet } from '@/lib/contract';
+import { switchToArcMainnet } from '@/lib/contract';
 
 interface WalletState {
   address: string | null;
@@ -11,17 +11,19 @@ interface WalletState {
   isCorrectNetwork: boolean;
   error: string | null;
   connect: () => Promise<void>;
+  connectWith: (provider: EthereumProvider) => Promise<boolean>;
   disconnect: () => void;
   switchNetwork: () => Promise<void>;
 }
 
-const TARGET_CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID ?? '5042002', 10);
+const TARGET_CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID ?? '2741', 10);
 
 const WalletContext = createContext<WalletState | undefined>(undefined);
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
+  const [activeProvider, setActiveProvider] = useState<EthereumProvider | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +34,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.ethereum) return;
     const eth = window.ethereum;
+    setActiveProvider(eth);
 
     // Use a non-interactive check
     eth.request({ method: 'eth_accounts' }).then((accounts) => {
@@ -42,23 +45,50 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     eth.request({ method: 'eth_chainId' }).then((id) => {
       setChainId(parseInt(id as string, 16));
     });
+  }, []);
+
+  // Follow account/chain events on whichever provider is active
+  useEffect(() => {
+    const provider = activeProvider;
+    if (!provider) return;
 
     const onAccountsChanged = (...args: unknown[]) => {
       const accounts = args[0] as string[];
-      setAddress(accounts[0] ?? null);
+      setAddress(accounts?.[0] ?? null);
     };
     const onChainChanged = (...args: unknown[]) => {
       const id = args[0] as string;
       setChainId(parseInt(id, 16));
     };
 
-    eth.on('accountsChanged', onAccountsChanged as any);
-    eth.on('chainChanged', onChainChanged as any);
+    provider.on('accountsChanged', onAccountsChanged);
+    provider.on('chainChanged', onChainChanged);
 
     return () => {
-      eth.removeListener('accountsChanged', onAccountsChanged as any);
-      eth.removeListener('chainChanged', onChainChanged as any);
+      provider.removeListener('accountsChanged', onAccountsChanged);
+      provider.removeListener('chainChanged', onChainChanged);
     };
+  }, [activeProvider]);
+
+  const connectWith = useCallback(async (provider: EthereumProvider): Promise<boolean> => {
+    if (!provider) return false;
+    setIsConnecting(true);
+    setError(null);
+    try {
+      const browserProvider = new ethers.BrowserProvider(provider);
+      const accounts = (await browserProvider.send('eth_requestAccounts', [])) as string[];
+      if (!accounts || accounts.length === 0) return false;
+      setActiveProvider(provider);
+      setAddress(accounts[0]);
+      const network = await browserProvider.getNetwork();
+      setChainId(Number(network.chainId));
+      return true;
+    } catch (err: unknown) {
+      setError((err as Error)?.message ?? 'Failed to connect');
+      return false;
+    } finally {
+      setIsConnecting(false);
+    }
   }, []);
 
   const connect = useCallback(async () => {
@@ -71,38 +101,27 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         window.location.href = `https://metamask.app.link/dapp/${dappUrl}`;
         return;
       }
-      setError('MetaMask not found. Please install it from metamask.io');
+      setError('No EVM wallet found. Please install MetaMask from metamask.io');
       return;
     }
-    setIsConnecting(true);
-    setError(null);
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum!);
-      const accounts = await provider.send('eth_requestAccounts', []);
-      setAddress(accounts[0]);
-      const network = await provider.getNetwork();
-      setChainId(Number(network.chainId));
-    } catch (err: unknown) {
-      setError((err as Error)?.message ?? 'Failed to connect');
-    } finally {
-      setIsConnecting(false);
-    }
-  }, []);
+    await connectWith(activeProvider ?? window.ethereum!);
+  }, [connectWith, activeProvider]);
 
   const disconnect = useCallback(() => {
     setAddress(null);
     setChainId(null);
+    setActiveProvider(null);
   }, []);
 
   const switchNetwork = useCallback(async () => {
-    const ok = await switchToArcTestnet();
+    const ok = await switchToArcMainnet();
     if (!ok) setError('Failed to switch network. Please switch manually in MetaMask.');
   }, []);
 
   return (
     <WalletContext.Provider value={{ 
       address, isConnected, isConnecting, chainId, isCorrectNetwork, error, 
-      connect, disconnect, switchNetwork 
+      connect, connectWith, disconnect, switchNetwork 
     }}>
       {children}
     </WalletContext.Provider>

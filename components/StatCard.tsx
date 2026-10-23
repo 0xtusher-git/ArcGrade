@@ -1,27 +1,25 @@
+import type { ReactNode } from 'react';
+
 interface StatCardProps {
-  icon: string;
+  icon: ReactNode;
   value: string | number;
   label: string;
   delay?: number;
-  color?: string;
 }
 
-export default function StatCard({ icon, value, label, delay = 0, color = '#4a9aba' }: StatCardProps) {
+export default function StatCard({ icon, value, label, delay = 0 }: StatCardProps) {
   return (
     <div
       className="stat-card animate-fade-in-up"
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
     >
-      <div
-        className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-4"
-        style={{ background: `${color}22`, border: `1px solid ${color}44` }}
-      >
+      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-teal">
         {icon}
       </div>
-      <div className="text-3xl font-black text-white mb-1" style={{ letterSpacing: '-0.02em' }}>
+      <div className="mb-1 font-mono text-3xl font-bold tabular-nums text-slate-100" style={{ letterSpacing: '-0.02em' }}>
         {value}
       </div>
-      <div className="text-sm text-white/50 font-medium">{label}</div>
+      <div className="text-[13px] font-medium text-slate-500">{label}</div>
     </div>
   );
 }

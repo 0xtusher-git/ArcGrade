@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const trustLevel = getTrustLevel(breakdown.total);
 
     // 3. Ask Claude for a human-readable verdict
-    const prompt = `You are an on-chain reputation analyst for Arc Testnet (an EVM blockchain by Circle).
+    const prompt = `You are an on-chain reputation analyst for Arc Mainnet (an EVM blockchain by Circle).
 
 Wallet: ${address}
 Transaction count: ${walletData.txCount}
@@ -57,11 +57,11 @@ Second sentence: give the overall verdict and recommendation for trusting this w
         model: 'claude-3-5-sonnet-latest',
         max_tokens: 150,
         messages: [{ role: 'user', content: prompt }],
-      });
+      }, { signal: AbortSignal.timeout(8000) });
       verdict = (msg.content[0] as { text: string }).text.trim();
     } catch {
       // Fallback verdict if API fails
-      verdict = `This wallet has ${walletData.txCount} transactions over ${walletData.walletAgeInDays} days on Arc Testnet. Based on its activity, it has been assigned a trust level of "${trustLevel}" with a score of ${breakdown.total}/100.`;
+      verdict = `This wallet has ${walletData.txCount} transactions over ${walletData.walletAgeInDays} days on Arc Mainnet. Based on its activity, it has been assigned a trust level of "${trustLevel}" with a score of ${breakdown.total}/100.`;
     }
 
     return NextResponse.json({

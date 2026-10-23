@@ -11,14 +11,20 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "@radix-ui/react-slot": "^1.4.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
-    "framer-motion": "^11.2.10",
+    "framer-motion": "^11.18.2",
+    "geist": "^1.7.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",
     "next": "14.2.3",
     "react": "^18",
     "react-dom": "^18",
-    "solc": "^0.8.35"
+    "solc": "^0.8.35",
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^4.0.10",

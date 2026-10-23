@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     {
       status: 'ok',
       version: '1.0.0',
-      network: 'Arc Testnet',
+      network: 'Arc Mainnet',
     },
     { headers: { ...headers, ...corsHeaders } }
   );
