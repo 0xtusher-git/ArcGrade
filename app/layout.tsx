@@ -12,13 +12,13 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'ArcGrade — On-Chain Reputation for Arc',
+  title: 'RepDex — Reputation & Swaps on Arc',
   description:
-    'Every wallet on Arc gets an AI-verified trust score based on on-chain activity. On-chain, forever.',
-  keywords: 'Arc, reputation, trust score, blockchain, AI, wallet, on-chain',
+    'Check any Arc wallet’s reputation, then swap tokens through Uniswap v4 — on-chain, on Arc mainnet.',
+  keywords: 'Arc, reputation, trust score, blockchain, Uniswap, swap, DEX, wallet, on-chain',
   openGraph: {
-    title: 'ArcGrade — On-Chain Reputation for Arc',
-    description: 'AI scores every Arc wallet. No middleman. No bias.',
+    title: 'RepDex — Reputation & Swaps on Arc',
+    description: 'Wallet reputation and Uniswap v4 swaps on Arc mainnet.',
     type: 'website',
   },
 };

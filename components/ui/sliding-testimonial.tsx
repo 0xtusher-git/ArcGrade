@@ -3,28 +3,28 @@ const testimonials = [
     name: 'Alena Zhukova',
     profession: 'Software Engineer',
     description:
-      'Checked the wallet score before sending USDC — the on-chain history told me everything I needed.',
+      'Swapped USDC into WETH in one transaction. The quote was live and the settlement was instant.',
     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80',
   },
   {
     name: 'Aiko',
     profession: 'Design Engineer',
     description:
-      'One lookup before a transfer. Never moving funds without reading the grade first.',
+      'Connect, quote, swap. That is the whole flow. No clutter and no surprise fees.',
     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80',
   },
   {
     name: 'Lisa Kemp',
     profession: 'Frontend Developer',
     description:
-      'Graded the wallet before I paid. Five seconds and the history spoke for itself.',
+      'Uniswap v4 liquidity on Arc, priced straight from the pool. It just works.',
     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80',
   },
   {
     name: 'Paula Smith',
     profession: 'UX Designer',
     description:
-      'A wallet with a clean transaction trail gives me confidence to send USDC instantly.',
+      'I trade on the terminal and check the wallet score when I need it. Both in one place.',
     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80',
   },
 ];
@@ -36,9 +36,11 @@ const SlidingTestimonial = () => {
     <section className="border-t border-white/10 bg-neutral-950">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
         <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-          Checked before they paid
+          Swaps on Arc, in one screen
         </h2>
-        <p className="mt-3 text-neutral-400">Wallets graded from on-chain history.</p>
+        <p className="mt-3 text-neutral-400">
+          Live Uniswap v4 liquidity, with wallet reputation when you need it.
+        </p>
 
         <div
           style={{

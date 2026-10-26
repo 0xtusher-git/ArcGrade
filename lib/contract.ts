@@ -20,8 +20,8 @@ export const ARCGRADE_ABI = [
   'function totalDeployments() view returns (uint256)',
 ];
 
-// On Arc Mainnet, ETH is the native token. 
-// A system contract exists at 0x36...000 for ERC20 compatibility.
+// On Arc Mainnet the native gas token is USDC (18 decimals).
+// The same balance is exposed through an ERC-20 predeploy at 0x36...000 (6 decimals).
 export const USDC_ADDRESS = '0x3600000000000000000000000000000000000000';
 export const ERC20_ABI = [
   'function balanceOf(address owner) view returns (uint256)',
@@ -87,9 +87,9 @@ export async function writeScoreOnChain(
 export const ARC_MAINNET_CONFIG = {
   chainId: `0x${CHAIN_ID.toString(16)}`,
   chainName: 'Arc Mainnet',
-  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+  nativeCurrency: { name: 'USD Coin', symbol: 'USDC', decimals: 18 },
   rpcUrls: [RPC_URL],
-  blockExplorerUrls: ['https://abscan.org'],
+  blockExplorerUrls: ['https://explorer.arc.io'],
 };
 
 // Ask MetaMask to switch to / add Arc Mainnet

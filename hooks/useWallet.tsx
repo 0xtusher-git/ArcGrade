@@ -10,13 +10,14 @@ interface WalletState {
   chainId: number | null;
   isCorrectNetwork: boolean;
   error: string | null;
+  provider: EthereumProvider | null;
   connect: () => Promise<void>;
   connectWith: (provider: EthereumProvider) => Promise<boolean>;
   disconnect: () => void;
   switchNetwork: () => Promise<void>;
 }
 
-const TARGET_CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID ?? '2741', 10);
+const TARGET_CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID ?? '5042', 10);
 
 const WalletContext = createContext<WalletState | undefined>(undefined);
 
@@ -120,7 +121,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   return (
     <WalletContext.Provider value={{ 
-      address, isConnected, isConnecting, chainId, isCorrectNetwork, error, 
+      address, isConnected, isConnecting, chainId, isCorrectNetwork, error, provider: activeProvider,
       connect, connectWith, disconnect, switchNetwork 
     }}>
       {children}
