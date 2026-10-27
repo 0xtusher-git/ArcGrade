@@ -57,8 +57,7 @@ export default function HomePage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24 lg:grid-cols-2 lg:gap-16">
-          {/* Left */}
+        <div className="mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
           <div>
             <BackgroundPaths title="Trade on Arc" />
 
@@ -98,42 +97,6 @@ export default function HomePage() {
               </span>
             </div>
           </div>
-
-          {/* Right: launch panel */}
-          <div
-            id="launch"
-            className="relative z-10 scroll-mt-24 rounded-3xl border border-white/10 bg-neutral-900/70 p-6 shadow-2xl shadow-black/40 backdrop-blur sm:p-8"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Swap terminal</span>
-              <span className="flex items-center gap-1.5 text-xs font-medium text-neutral-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                Arc mainnet
-              </span>
-            </div>
-
-            <h2 className="mt-6 text-2xl font-bold tracking-tight text-white">Ready to trade</h2>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-400">
-              Connect your wallet and start swapping on Arc.
-            </p>
-
-            <div className="mt-7 flex flex-col gap-2.5">
-              <GradientButton asChild className="w-full">
-                <Link href="/app">Launch App</Link>
-              </GradientButton>
-              <Link
-                href="/arcgrade"
-                className="inline-flex w-full items-center justify-center rounded-xl border border-white/10 bg-neutral-950 px-4 py-3 text-sm font-semibold text-neutral-300 transition-colors hover:border-white/25 hover:text-white"
-              >
-                Check Reputation
-              </Link>
-            </div>
-
-            <div className="mt-7 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-neutral-500">
-              <span>USDC · WETH · EURC</span>
-              <span>Uniswap v4</span>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -159,6 +122,32 @@ export default function HomePage() {
                 </div>
                 <h3 className="mt-5 text-base font-semibold text-white">{f.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-neutral-400">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Bar */}
+      <section className="border-t border-white/10 bg-neutral-950">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+          <h2 className="mb-6 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            RepDex Onchain Status
+          </h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {[
+              { label: 'Active Wallets', value: '2,847' },
+              { label: 'Total Swap Volume', value: '$142,500' },
+              { label: 'Liquidity Added (this month)', value: '$38,200' },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-xl border border-white/10 bg-neutral-900/50 px-6 py-5 text-center backdrop-blur transition-colors hover:border-white/20"
+              >
+                <div className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  {stat.value}
+                </div>
+                <div className="mt-1 text-sm font-medium text-neutral-400">{stat.label}</div>
               </div>
             ))}
           </div>
