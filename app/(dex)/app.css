@@ -1,0 +1,564 @@
+.app-route {
+  --app-accent: #22d3ee;
+  --app-accent-foreground: #0a0a0a;
+  /* GlassButton resolves these with relative oklch() color syntax. */
+  --background: #0a0a0a;
+  --foreground: #ffffff;
+}
+
+.app-route .app-btn {
+  display: inline-flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: white;
+  transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease, opacity 150ms ease;
+}
+
+.app-route .app-btn:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.app-route .app-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.app-route .app-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.app-route .app-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  padding: 0.5rem;
+  color: rgb(163, 163, 163);
+  transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+
+.app-route .app-btn-icon:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.app-route .app-btn-icon:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.app-route .app-btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.app-route .app-btn-compact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+
+.app-route .app-btn-compact:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.app-route .app-btn-compact:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Ambient background: soft accent blobs behind the glass surfaces. */
+.app-route .app-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.app-route .app-ambient-blob {
+  position: absolute;
+  width: 44rem;
+  height: 44rem;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--app-accent) 55%, transparent) 0%,
+    color-mix(in srgb, var(--app-accent) 18%, transparent) 42%,
+    transparent 72%
+  );
+  filter: blur(110px);
+  opacity: 0.18;
+  will-change: transform;
+}
+
+.app-route .app-ambient-blob-a {
+  top: -16rem;
+  left: -12rem;
+}
+
+.app-route .app-ambient-blob-b {
+  right: -14rem;
+  bottom: -18rem;
+  opacity: 0.15;
+}
+
+.app-route .app-ambient-blob-c {
+  top: 32%;
+  left: 46%;
+  width: 36rem;
+  height: 36rem;
+  opacity: 0.1;
+  animation: app-blob-drift 36s ease-in-out infinite;
+}
+
+@keyframes app-blob-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4rem, -3rem, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* Main panel is just a layout container; glass lives on the card. */
+.app-route .app-main-panel {
+  border-radius: 1rem;
+  background: transparent;
+}
+
+@media (min-width: 640px) {
+  .app-route .app-main-panel {
+    border-radius: 1.5rem;
+  }
+}
+
+/* Swap card and the two stacked asset boxes. */
+.app-route .app-card-column {
+  width: min(408px, 100% - 32px);
+  margin-inline: auto;
+}
+
+@media (min-width: 440px) {
+  .app-route .app-card-column {
+    width: 408px;
+  }
+}
+
+.app-route .app-swap-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 401.46px;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top-color: rgba(255, 255, 255, 0.24);
+  border-left-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  padding: 1rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 40px 90px -24px rgba(0, 0, 0, 0.9),
+    0 8px 24px -12px rgba(0, 0, 0, 0.8);
+}
+
+.app-route .app-swap-box {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  backdrop-filter: blur(10px) saturate(120%);
+  padding: 14px 16px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.app-route .app-swap-box:focus-within {
+  border-color: color-mix(in srgb, var(--app-accent) 65%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--app-accent) 30%, transparent);
+}
+
+.app-route .app-flip-row {
+  margin-top: -18px;
+  margin-bottom: -18px;
+}
+
+.app-route .app-flip-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  border: 3px solid rgba(10, 10, 12, 0.85);
+  background: rgba(255, 255, 255, 0.09);
+  color: white;
+  transition: background-color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+}
+
+.app-route .app-flip-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.app-route .app-flip-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.app-route .app-token-pill {
+  display: inline-flex;
+  max-width: 11rem;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.3125rem 0.625rem 0.3125rem 0.375rem;
+  transition: background-color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+}
+
+.app-route .app-token-pill:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.app-route .app-token-pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.app-route .app-token-pill-accent {
+  border-color: transparent;
+  background: var(--app-accent);
+  color: var(--app-accent-foreground);
+  padding: 0.5rem 0.75rem;
+}
+
+.app-route .app-token-pill-accent:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--app-accent);
+  opacity: 0.9;
+}
+
+.app-route .app-amount-input,
+.app-route .app-amount-display {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+}
+
+.app-route .app-amount-input::placeholder {
+  color: rgb(64, 64, 64);
+}
+
+.app-route .app-amount-input:disabled {
+  color: rgb(115, 115, 115);
+  cursor: not-allowed;
+}
+
+@media (min-width: 640px) {
+  .app-route .app-amount-input,
+  .app-route .app-amount-display {
+    font-size: 1.875rem;
+  }
+}
+
+/* Slim testnet notice / faucet strip under the card. */
+.app-route .app-testnet-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-top: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.75rem;
+  color: rgb(163, 163, 163);
+}
+
+.app-route .app-no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.app-route .app-no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Logo link: roomy separation from the nav, plus a clear focus ring. */
+.app-route .app-logo-link {
+  /* Header already has gap-3 (12px); this brings the mobile gap to ~20px. */
+  margin-right: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.app-route .app-logo-link:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 4px;
+}
+
+@media (min-width: 768px) {
+  .app-route .app-logo-link {
+    /* 36px + 12px header gap = 48px to the first nav link. */
+    margin-right: 2.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-route .app-logo-link {
+    /* 52px + 12px header gap = 64px to the first nav link. */
+    margin-right: 3.25rem;
+  }
+}
+
+/* Swap header nav tokens, matching Relay's computed typography and colors. */
+.app-route .app-header {
+  --nav-font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --nav-font-size: 16px;
+  --nav-font-weight: 700;
+  --nav-color-active: #ecedee;
+  --nav-color-inactive: #9ba1a6;
+  --nav-gap: 36px;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+.app-route .app-header .app-nav-mobile {
+  display: flex;
+  align-items: center;
+  gap: var(--nav-gap);
+}
+
+@media (min-width: 768px) {
+  .app-route .app-header .app-nav-desktop {
+    display: flex;
+    align-items: center;
+    gap: var(--nav-gap);
+  }
+}
+
+/* Plain-text Swap / Bridge / Liquidity links. */
+.app-route .app-header .app-nav-text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  margin: 0;
+  padding: 0;
+  border-radius: 6px;
+  color: var(--nav-color-inactive);
+  font-family: var(--nav-font-family);
+  font-size: var(--nav-font-size);
+  font-weight: var(--nav-font-weight);
+  letter-spacing: normal;
+  line-height: normal;
+  text-transform: none;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 150ms ease;
+}
+
+.app-route .app-header .app-nav-text-link:hover {
+  color: var(--nav-color-active);
+}
+
+.app-route .app-header .app-nav-text-link[aria-current='page'] {
+  color: var(--nav-color-active);
+}
+
+.app-route .app-header .app-nav-text-link:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 4px;
+}
+
+@media (max-width: 767px) {
+  .app-route .app-header {
+    --nav-font-size: 15px;
+    --nav-gap: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-route .app-header .app-nav-text-link {
+    transition: none !important;
+  }
+}
+
+/* Popovers: header search, settings and wallet menus. */
+.app-glass-popover {
+  background: linear-gradient(
+    160deg,
+    rgba(30, 30, 35, 0.88) 0%,
+    rgba(16, 16, 19, 0.92) 100%
+  ) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 28px 70px -24px rgba(0, 0, 0, 0.92);
+}
+
+.app-glass-scrim {
+  background: rgba(6, 6, 8, 0.72);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  backdrop-filter: blur(18px) saturate(130%);
+}
+
+/* Select-token modal (portaled to <body>, so these classes are top-level). */
+.app-modal-backdrop {
+  background: rgba(5, 5, 7, 0.66) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  backdrop-filter: blur(14px) saturate(120%);
+}
+
+.app-modal-panel {
+  background: linear-gradient(
+    160deg,
+    rgba(26, 26, 31, 0.94) 0%,
+    rgba(12, 12, 15, 0.96) 100%
+  ) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 40px 100px -30px rgba(0, 0, 0, 0.95);
+}
+
+@media (min-width: 640px) {
+  .app-modal-panel {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* The modal portals outside .app-route, so repeat the muted-copy fix here. */
+.app-modal-panel .text-neutral-500 {
+  color: #a3a3a3;
+}
+
+.app-modal-panel .text-neutral-600 {
+  color: #8a8a8a;
+}
+
+.app-modal-panel input::placeholder {
+  color: #8a8a8a;
+}
+
+/* Keep small muted copy readable over the glass (WCAG AA). */
+.app-route .text-neutral-500 {
+  color: #a3a3a3;
+}
+
+.app-route .text-neutral-600 {
+  color: #8a8a8a;
+}
+
+.app-route .app-amount-input::placeholder {
+  color: #8a8a8a;
+}
+
+/* Opaque fallback where blur is unavailable or transparency is reduced. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .app-route .app-swap-card,
+  .app-route .app-swap-box,
+  .app-glass-popover,
+  .app-glass-scrim,
+  .app-modal-panel {
+    background: #141417 !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .app-modal-backdrop {
+    background: rgba(5, 5, 7, 0.92) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .app-route .app-swap-card,
+  .app-route .app-swap-box,
+  .app-glass-popover,
+  .app-glass-scrim,
+  .app-modal-panel {
+    background: #141417 !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .app-modal-backdrop {
+    background: rgba(5, 5, 7, 0.92) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+.app-route *:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-route .app-ambient-blob {
+    animation: none;
+  }
+
+  .app-route *,
+  .app-route *::before,
+  .app-route *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
