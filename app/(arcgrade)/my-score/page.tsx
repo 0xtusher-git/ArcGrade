@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import ScoreRing from '@/components/ScoreRing';
-import { useWallet } from '@/hooks/useWallet';
+import { useArcGradeWallet } from '@/hooks/useArcGradeWallet';
 import { shortenAddress, getBadge, getScoreColor } from '@/lib/scoring';
 import {
   User, Wallet, Link, Warning, CircleNotch, Medal, Brain,
@@ -43,7 +43,7 @@ function saveHistory(address: string, score: number) {
 }
 
 export default function MyScorePage() {
-  const { address, isConnected, isConnecting, connect, isCorrectNetwork, switchNetwork } = useWallet();
+  const { address, isConnected, isConnecting, connect, isCorrectNetwork, switchNetwork } = useArcGradeWallet();
   const router = useRouter();
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [userRank, setUserRank] = useState<number | null>(null);

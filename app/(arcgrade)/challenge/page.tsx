@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import ScoreRing from '@/components/ScoreRing';
-import { useWallet } from '@/hooks/useWallet';
+import { useArcGradeWallet } from '@/hooks/useArcGradeWallet';
 import { shortenAddress, getBadge } from '@/lib/scoring';
 import { ethers } from 'ethers';
 import { Sword, Lock, Link, Lightning, Trophy } from '@phosphor-icons/react';
@@ -18,7 +18,7 @@ interface CompareResult {
 }
 
 export default function ChallengePage() {
-  const { address: connectedAddress, isConnected, connect, isConnecting } = useWallet();
+  const { address: connectedAddress, isConnected, connect, isConnecting } = useArcGradeWallet();
   const [addr1, setAddr1] = useState('');
   const [addr2, setAddr2] = useState('');
 

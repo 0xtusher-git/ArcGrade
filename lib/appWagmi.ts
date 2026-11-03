@@ -3,10 +3,8 @@
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
 import {
   bitgetWallet,
-  coinbaseWallet,
   injectedWallet,
   metaMaskWallet,
-  okxWallet,
   walletConnectWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 import { createConfig, http } from 'wagmi';
@@ -18,20 +16,22 @@ export const hasWalletConnect = Boolean(projectId);
 
 // WalletConnect requires a real project ID, so that connector is only added
 // when the env var is present. Everything else keeps working without it.
-const wallets = [
-  injectedWallet,
-  metaMaskWallet,
-  coinbaseWallet,
-  bitgetWallet,
-  okxWallet,
-  ...(hasWalletConnect ? [walletConnectWallet] : []),
-];
-
+//
+// Installed browser wallets (OKX, Phantom, ...) are discovered by RainbowKit
+// via EIP-6963 and shown under its own "Installed" group, so they are not
+// listed here. Coinbase and Rainbow are intentionally left out.
 const connectors = connectorsForWallets(
   [
     {
-      groupName: 'Recommended',
-      wallets,
+      groupName: 'Browser Wallets',
+      wallets: [injectedWallet, metaMaskWallet],
+    },
+    {
+      groupName: 'Other',
+      wallets: [
+        ...(hasWalletConnect ? [walletConnectWallet] : []),
+        bitgetWallet,
+      ],
     },
   ],
   {

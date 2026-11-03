@@ -4,13 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowsDownUp,
   CaretDown,
+  CheckCircle,
   CircleNotch,
   GearSix,
   Warning,
 } from '@phosphor-icons/react';
 import { RefreshCw, Wallet } from 'lucide-react';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
-import { sepolia } from 'viem/chains';
 import {
   useAccount,
   usePublicClient,
@@ -22,7 +22,7 @@ import { arcTestnet } from '@/lib/appChain';
 import {
   ARC_EXPLORER_URL,
   CONTRACTS_READY,
-  DEX_TOKENS,
+  EURC,
   PERMIT2,
   SLIPPAGE_OPTIONS_BPS,
   UNIVERSAL_ROUTER,
@@ -38,11 +38,17 @@ import {
 } from '@/lib/dexConfig.testnet';
 import { FlowHoverButton } from '@/components/ui/flow-hover-button';
 import { ERC20_ABI, PERMIT2_ABI } from './lib/abis';
+import {
+  BRIDGE_CHAINS,
+  DEFAULT_NON_ARC_CHAIN_ID,
+  bridgeUsdc,
+  getBridgeChain,
+  nextBridgePair,
+} from './lib/bridgeChains';
 import { fiatValue } from './lib/format';
 import { SelectTokenModal, type TokenPickerMode } from './components/SelectTokenModal';
 import { TokenIcon } from './components/TokenIcon';
-import { useImportedTokens } from './imported-tokens';
-import type { ImportCandidate } from './hooks/useTokenSearch';
+import { useDexTokens } from './hooks/useDexTokens';
 
 type Quote = { amountOut: bigint; tokenIn: DexToken; tokenOut: DexToken; amountIn: bigint };
 type TxStatus = 'idle' | 'approving-token' | 'approving-permit2' | 'swapping' | 'success' | 'error';
@@ -51,18 +57,6 @@ type PickerTarget = 'sell' | 'buy' | 'bridge-from' | 'bridge-to' | 'lp-token1' |
 
 const PERMIT2_EXPIRY_SECONDS = 60 * 60 * 24 * 30;
 const FAUCET_URL = 'https://faucet.circle.com';
-
-const SEPOLIA_BRIDGE_TOKEN: DexToken = {
-  symbol: 'USDC',
-  name: 'USD Coin',
-  address: '',
-  decimals: 6,
-  chainId: sepolia.id,
-  chainName: 'Ethereum Sepolia',
-  icon: 'U',
-};
-
-const BRIDGE_TOKENS: DexToken[] = [SEPOLIA_BRIDGE_TOKEN, ...DEX_TOKENS];
 
 function TokenPill({
   token,
@@ -77,7 +71,7 @@ function TokenPill({
   onClick: () => void;
   disabled?: boolean;
 }) {
-  const chainKey = token && token.chainId === sepolia.id ? 'sepolia' : 'arc';
+  const chain = token ? getBridgeChain(token.chainId) : null;
 
   return (
     <button
@@ -90,10 +84,24 @@ function TokenPill({
     >
       {token ? (
         <>
-          <TokenIcon symbol={token.symbol} glyph={token.icon} chain={chainKey} size={28} />
+          <TokenIcon
+            symbol={token.symbol}
+            glyph={token.icon}
+            logo={token.logo}
+            chain={chain}
+            size={28}
+          />
           <span className="min-w-0 text-left">
-            <span className="block truncate text-base font-semibold leading-tight text-white">
-              {token.symbol}
+            <span className="flex items-center gap-1 text-base font-semibold leading-tight text-white">
+              <span className="truncate">{token.symbol}</span>
+              {token.verified && (
+                <CheckCircle
+                  size={12}
+                  weight="fill"
+                  className="shrink-0 text-[var(--app-accent)]"
+                  aria-label="Verified"
+                />
+              )}
             </span>
             <span className="block truncate text-xs leading-tight text-neutral-500">
               {token.chainName ?? 'Arc Testnet'}
@@ -260,17 +268,19 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
   const { sendTransactionAsync } = useSendTransaction();
-  const { importedTokens, addImportedToken } = useImportedTokens();
+  const allTokens = useDexTokens(publicClient);
 
   const [tokenIn, setTokenIn] = useState<DexToken | null>(USDC);
-  const [tokenOut, setTokenOut] = useState<DexToken | null>(null);
+  const [tokenOut, setTokenOut] = useState<DexToken | null>(EURC);
   const [amount, setAmount] = useState('');
   const [slippageBps, setSlippageBps] = useState<number>(50);
 
-  const [bridgeFrom, setBridgeFrom] = useState<DexToken | null>(SEPOLIA_BRIDGE_TOKEN);
-  const [bridgeTo, setBridgeTo] = useState<DexToken | null>(USDC);
+  const [bridgeFromChainId, setBridgeFromChainId] = useState<number>(DEFAULT_NON_ARC_CHAIN_ID);
+  const [bridgeToChainId, setBridgeToChainId] = useState<number>(arcTestnet.id);
+  const bridgeFrom = useMemo(() => bridgeUsdc(getBridgeChain(bridgeFromChainId)), [bridgeFromChainId]);
+  const bridgeTo = useMemo(() => bridgeUsdc(getBridgeChain(bridgeToChainId)), [bridgeToChainId]);
   const [lpToken1, setLpToken1] = useState<DexToken | null>(USDC);
-  const [lpToken2, setLpToken2] = useState<DexToken | null>(null);
+  const [lpToken2, setLpToken2] = useState<DexToken | null>(EURC);
 
   const [pickerTarget, setPickerTarget] = useState<PickerTarget | null>(null);
 
@@ -289,8 +299,6 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
   const [statusNote, setStatusNote] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
-  const allTokens = useMemo(() => [...DEX_TOKENS, ...importedTokens], [importedTokens]);
-
   const amountIn = useMemo(
     () => (tokenIn ? parseAmount(amount, tokenIn.decimals) : null),
     [amount, tokenIn]
@@ -299,6 +307,7 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
     () => (tokenIn && tokenOut ? getPool(tokenIn, tokenOut) : undefined),
     [tokenIn, tokenOut]
   );
+  const noLiquidity = Boolean(tokenIn && tokenOut && !pool);
   const busy =
     txStatus === 'approving-token' || txStatus === 'approving-permit2' || txStatus === 'swapping';
 
@@ -450,6 +459,15 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
     [resetTx]
   );
 
+  const selectBridgeChain = useCallback(
+    (side: 'from' | 'to', chainId: number) => {
+      const [nextFrom, nextTo] = nextBridgePair(side, chainId, bridgeFromChainId, bridgeToChainId);
+      setBridgeFromChainId(nextFrom);
+      setBridgeToChainId(nextTo);
+    },
+    [bridgeFromChainId, bridgeToChainId]
+  );
+
   const routeToken = useCallback(
     (token: DexToken, target: PickerTarget) => {
       if (target === 'sell') {
@@ -461,11 +479,11 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
         return;
       }
       if (target === 'bridge-from') {
-        setBridgeFrom(token);
+        selectBridgeChain('from', token.chainId ?? arcTestnet.id);
         return;
       }
       if (target === 'bridge-to') {
-        setBridgeTo(token);
+        selectBridgeChain('to', token.chainId ?? arcTestnet.id);
         return;
       }
       if (target === 'lp-token1') {
@@ -480,28 +498,10 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
         previous && previous.address.toLowerCase() === token.address.toLowerCase() ? null : previous
       );
     },
-    [setBuyToken, setSellToken]
+    [setBuyToken, setSellToken, selectBridgeChain]
   );
 
   const handleSelect = (token: DexToken) => {
-    if (!pickerTarget) return;
-    const target = pickerTarget;
-    setPickerTarget(null);
-    routeToken(token, target);
-  };
-
-  const handleImport = (candidate: ImportCandidate) => {
-    const token: DexToken = {
-      symbol: candidate.symbol,
-      name: candidate.name,
-      address: candidate.address,
-      decimals: candidate.decimals,
-      chainId: arcTestnet.id,
-      chainName: 'Arc Testnet',
-      icon: candidate.symbol.slice(0, 1),
-    };
-    addImportedToken(token);
-
     if (!pickerTarget) return;
     const target = pickerTarget;
     setPickerTarget(null);
@@ -515,6 +515,11 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
     setTokenOut(nextOut);
     setAmount('');
     resetTx();
+  };
+
+  const flipBridgeChains = () => {
+    setBridgeFromChainId(bridgeToChainId);
+    setBridgeToChainId(bridgeFromChainId);
   };
 
   const ensureAllowances = async (needed: bigint) => {
@@ -674,11 +679,14 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
     actionHandler = () => {
       void switchChainAsync({ chainId: arcTestnet.id });
     };
-  } else if (!CONTRACTS_READY) {
-    actionLabel = 'Swap unavailable';
-    actionDisabled = true;
   } else if (!tokenIn || !tokenOut) {
     actionLabel = 'Select a token';
+    actionDisabled = true;
+  } else if (noLiquidity) {
+    actionLabel = 'No liquidity for this pair yet';
+    actionDisabled = true;
+  } else if (!CONTRACTS_READY) {
+    actionLabel = 'Swap unavailable';
     actionDisabled = true;
   } else if (!amountIn) {
     actionLabel = 'Enter an amount';
@@ -698,9 +706,6 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
     actionLabel = 'Getting quote...';
   } else if (insufficientBalance) {
     actionLabel = 'Insufficient balance';
-    actionDisabled = true;
-  } else if (!pool) {
-    actionLabel = 'No route available';
     actionDisabled = true;
   } else if (quoteError) {
     actionLabel = 'Swap unavailable';
@@ -727,7 +732,14 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
       : pickerTarget === 'lp-token1' || pickerTarget === 'lp-token2'
         ? 'liquidity'
         : 'swap';
-  const pickerTokens = pickerMode === 'bridge' ? BRIDGE_TOKENS : allTokens;
+  const bridgeSide: 'from' | 'to' | null =
+    pickerTarget === 'bridge-from' ? 'from' : pickerTarget === 'bridge-to' ? 'to' : null;
+  const bridgePickerChainId =
+    bridgeSide === 'from' ? bridgeFromChainId : bridgeSide === 'to' ? bridgeToChainId : null;
+  const pickerTokens =
+    pickerMode === 'bridge' && bridgePickerChainId !== null
+      ? [bridgeUsdc(getBridgeChain(bridgePickerChainId))]
+      : allTokens;
   const pickerSelected =
     pickerTarget === 'sell'
       ? tokenIn
@@ -742,6 +754,16 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
               : pickerTarget === 'lp-token2'
                 ? lpToken2
                 : null;
+  const pickerInUse =
+    pickerTarget === 'sell'
+      ? tokenOut
+      : pickerTarget === 'buy'
+        ? tokenIn
+        : pickerTarget === 'lp-token1'
+          ? lpToken2
+          : pickerTarget === 'lp-token2'
+            ? lpToken1
+            : null;
 
   return (
     <>
@@ -826,7 +848,11 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
                     fiat={fiatValue(tokenOut, quote?.amountOut ?? null)}
                   >
                     <div className="app-amount-display" aria-live="polite">
-                      {!tokenOut ? (
+                      {noLiquidity ? (
+                        <span className="text-sm text-neutral-400">
+                          No liquidity for this pair yet
+                        </span>
+                      ) : !tokenOut ? (
                         <span className="text-neutral-700">0.0</span>
                       ) : quoteLoading ? (
                         <span className="inline-flex items-center gap-2 text-base text-neutral-500">
@@ -875,14 +901,7 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
                     </p>
                   )}
 
-                  {CONTRACTS_READY && tokenIn && tokenOut && !pool && (
-                    <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-amber-200/90">
-                      <Warning size={14} weight="bold" className="mt-0.5 shrink-0" aria-hidden="true" />
-                      No direct Uniswap v4 pool for {tokenIn.symbol}/{tokenOut.symbol} on Arc Testnet.
-                    </p>
-                  )}
-
-                  {quoteError && !quoteLoading && CONTRACTS_READY && (
+                  {quoteError && !quoteLoading && !noLiquidity && CONTRACTS_READY && (
                     <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-red-300">
                       <Warning size={14} weight="bold" className="mt-0.5 shrink-0" aria-hidden="true" />
                       {quoteError}
@@ -995,7 +1014,12 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
                   </AssetBox>
 
                   <div className="app-flip-row relative z-10 flex justify-center">
-                    <button type="button" disabled aria-label="Flip bridge tokens" className="app-flip-btn">
+                    <button
+                      type="button"
+                      onClick={flipBridgeChains}
+                      aria-label="Flip bridge chains"
+                      className="app-flip-btn"
+                    >
                       <ArrowsDownUp size={16} weight="bold" aria-hidden="true" />
                     </button>
                   </div>
@@ -1032,7 +1056,7 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
                     </FlowHoverButton>
                   ) : (
                     <button type="button" disabled className="app-btn w-full">
-                      Bridge (not live yet)
+                      Bridging isn&apos;t live yet
                     </button>
                   )}
                   <p className="mt-2 text-center text-xs text-neutral-500">
@@ -1160,9 +1184,15 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
         explorerUrl={ARC_EXPLORER_URL}
         publicClient={publicClient}
         address={address}
+        bridgeChains={pickerMode === 'bridge' ? BRIDGE_CHAINS : []}
+        selectedChainId={bridgePickerChainId}
+        chainSide={bridgeSide}
+        inUseToken={pickerMode === 'bridge' ? null : pickerInUse}
+        onChainSelect={
+          bridgeSide ? (chainId) => selectBridgeChain(bridgeSide, chainId) : undefined
+        }
         onClose={() => setPickerTarget(null)}
         onSelect={handleSelect}
-        onImport={handleImport}
       />
 
     </>

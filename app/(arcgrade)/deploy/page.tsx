@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ethers } from 'ethers';
 import Navbar from '@/components/Navbar';
-import { useWallet } from '@/hooks/useWallet';
+import { useArcGradeWallet } from '@/hooks/useArcGradeWallet';
 import { getNativeBalance, USDC_ADDRESS, ARC_MAINNET_CONFIG, ARCGRADE_ABI } from '@/lib/contract';
 import { CONTRACT_TEMPLATES, ContractTemplate } from '@/lib/templates';
 import { shortenAddress, getBadge, getScoreColor } from '@/lib/scoring';
@@ -15,7 +15,7 @@ import { Wallet, Warning, Rocket, CheckCircle, ArrowRight, ArrowLeft, FileCode, 
 
 export default function DeployPage() {
   const router = useRouter();
-  const { address, isConnected, isConnecting, connect, chainId, isCorrectNetwork, switchNetwork } = useWallet();
+  const { address, isConnected, isConnecting, connect, chainId, isCorrectNetwork, switchNetwork } = useArcGradeWallet();
   
   // State
   const [step, setStep] = useState(1);

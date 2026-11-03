@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -9,9 +9,9 @@ import { RefreshCw, Wallet } from 'lucide-react';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { useAccount, useDisconnect, usePublicClient, useSwitchChain } from 'wagmi';
 import { arcTestnet } from '@/lib/appChain';
-import { ARC_EXPLORER_URL, DEX_TOKENS, type DexToken } from '@/lib/dexConfig.testnet';
-import { useTokenSearch, type ImportCandidate } from './hooks/useTokenSearch';
-import { useImportedTokens } from './imported-tokens';
+import { ARC_EXPLORER_URL, type DexToken } from '@/lib/dexConfig.testnet';
+import { useTokenSearch } from './hooks/useTokenSearch';
+import { useDexTokens } from './hooks/useDexTokens';
 import { FlowHoverButton } from '@/components/ui/flow-hover-button';
 import { AccountMenu } from './components/AccountMenu';
 import { SearchResults } from './components/SearchResults';
@@ -31,7 +31,6 @@ export function AppHeader() {
   const { disconnect } = useDisconnect();
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
   const publicClient = usePublicClient();
-  const { importedTokens, addImportedToken } = useImportedTokens();
 
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -40,12 +39,11 @@ export function AppHeader() {
   const mobileSearchRef = useRef<HTMLInputElement>(null);
   const searchWrapRef = useRef<HTMLDivElement>(null);
 
-  const allTokens = useMemo(() => [...DEX_TOKENS, ...importedTokens], [importedTokens]);
+  const allTokens = useDexTokens(publicClient);
   const searchActive = searchOpen || mobileSearchOpen;
   const search = useTokenSearch({
     query,
     tokens: allTokens,
-    publicClient,
     explorerUrl: ARC_EXPLORER_URL,
     enabled: searchActive,
   });
@@ -71,23 +69,6 @@ export function AppHeader() {
       openSwapWith(token);
     },
     [openSwapWith]
-  );
-
-  const handleImport = useCallback(
-    (candidate: ImportCandidate) => {
-      const token: DexToken = {
-        symbol: candidate.symbol,
-        name: candidate.name,
-        address: candidate.address,
-        decimals: candidate.decimals,
-        chainId: arcTestnet.id,
-        chainName: 'Arc Testnet',
-        icon: candidate.symbol.slice(0, 1),
-      };
-      addImportedToken(token);
-      openSwapWith(token);
-    },
-    [addImportedToken, openSwapWith]
   );
 
   // "/" focuses the search box unless the user is already typing somewhere.
@@ -254,7 +235,7 @@ export function AppHeader() {
                 <div className="border-b border-white/5 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
                   Tokens on Arc Testnet
                 </div>
-                <SearchResults state={search} onSelect={handleSelect} onImport={handleImport} />
+                <SearchResults state={search} onSelect={handleSelect} />
               </div>
             )}
           </div>
@@ -344,7 +325,7 @@ export function AppHeader() {
               Tokens on Arc Testnet
             </div>
             <div className="max-h-full overflow-y-auto">
-              <SearchResults state={search} onSelect={handleSelect} onImport={handleImport} />
+              <SearchResults state={search} onSelect={handleSelect} />
             </div>
           </div>
         </div>

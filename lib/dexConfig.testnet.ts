@@ -39,8 +39,12 @@ export type DexToken = {
   isGasToken?: boolean;
   chainId?: number;
   chainName?: string;
-  /** Short glyph used by the inline token icon (no external images). */
+  /** Fallback letter used when the official logo is missing or fails to load. */
   icon?: string;
+  /** Public path to the official, locally hosted token logo. */
+  logo?: string;
+  /** Issuer-published token, safe to show a verified check. */
+  verified?: boolean;
 };
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -50,41 +54,96 @@ export function isTokenDeployed(token: DexToken): boolean {
   return /^0x[0-9a-fA-F]{40}$/.test(token.address) && token.address !== ZERO_ADDRESS;
 }
 
-// Tokens for testnet - will be configured via env or defaults
-export const DEX_TOKENS: DexToken[] = [
-  {
-    symbol: 'USDC',
-    name: 'USD Coin',
-    address: process.env.NEXT_PUBLIC_TESTNET_USDC || '0x3600000000000000000000000000000000000000',
-    decimals: 6,
-    isGasToken: true,
-    chainId: ARC_TESTNET_CHAIN_ID,
-    chainName: 'Arc Testnet',
-    icon: 'U',
-  },
-  {
-    symbol: 'WETH',
-    name: 'Wrapped Ether',
-    address: process.env.NEXT_PUBLIC_TESTNET_WETH || '0x0000000000000000000000000000000000000000',
-    decimals: 18,
-    chainId: ARC_TESTNET_CHAIN_ID,
-    chainName: 'Arc Testnet',
-    icon: 'W',
-  },
-  {
-    symbol: 'EURC',
-    name: 'Euro Coin',
-    address: process.env.NEXT_PUBLIC_TESTNET_EURC || '0x0000000000000000000000000000000000000000',
-    decimals: 6,
-    chainId: ARC_TESTNET_CHAIN_ID,
-    chainName: 'Arc Testnet',
-    icon: 'E',
-  },
-];
+/**
+ * Use an env override when it is a valid non-zero address, otherwise fall back
+ * to the official Arc Testnet address. Returning the fallback (instead of an
+ * empty string) keeps the token row visible even when an override is malformed.
+ */
+function resolveConfiguredAddress(envValue: string | undefined, fallback: string): string {
+  const trimmed = (envValue ?? '').trim();
+  if (/^0x[0-9a-fA-F]{40}$/.test(trimmed) && trimmed.toLowerCase() !== ZERO_ADDRESS) {
+    return trimmed;
+  }
+  return fallback;
+}
 
-export const USDC = DEX_TOKENS[0];
-export const WETH = DEX_TOKENS[1];
-export const EURC = DEX_TOKENS[2];
+/**
+ * Official Arc Testnet addresses from
+ * https://docs.arc.io/arc/references/contract-addresses (retrieved 2026-11-01).
+ * `NEXT_PUBLIC_TOKEN_CIRBTC` and `NEXT_PUBLIC_TOKEN_WETH` can override them for
+ * local deployments; decimals are read from the contracts at runtime.
+ */
+export const CIRBTC_ADDRESS = resolveConfiguredAddress(
+  process.env.NEXT_PUBLIC_TOKEN_CIRBTC,
+  '0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF'
+);
+
+export const WETH_ADDRESS = resolveConfiguredAddress(
+  process.env.NEXT_PUBLIC_TOKEN_WETH,
+  '0x2c4047028a72803939b6fb674D01bC059B5C4961'
+);
+
+// Only issuer-published tokens that Arc Testnet actually supports.
+export const USDC: DexToken = {
+  symbol: 'USDC',
+  name: 'USD Coin',
+  address: '0x3600000000000000000000000000000000000000',
+  decimals: 6,
+  isGasToken: true,
+  chainId: ARC_TESTNET_CHAIN_ID,
+  chainName: 'Arc Testnet',
+  icon: 'U',
+  logo: '/tokens/usdc.png',
+  verified: true,
+};
+
+export const EURC: DexToken = {
+  symbol: 'EURC',
+  name: 'Euro Coin',
+  address: '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a',
+  decimals: 6,
+  chainId: ARC_TESTNET_CHAIN_ID,
+  chainName: 'Arc Testnet',
+  icon: 'E',
+  logo: '/tokens/eurc.png',
+  verified: true,
+};
+
+/**
+ * Exactly four swap/liquidity tokens. cirBTC and WETH use the official Arc
+ * Testnet contracts above; their decimals are read on-chain by `useDexTokens`
+ * and the documented values below are only the initial display fallback.
+ */
+export const CIRBTC: DexToken = {
+  symbol: 'cirBTC',
+  name: 'Circle Wrapped Bitcoin',
+  address: CIRBTC_ADDRESS,
+  decimals: 8,
+  chainId: ARC_TESTNET_CHAIN_ID,
+  chainName: 'Arc Testnet',
+  icon: 'C',
+  logo: '/tokens/cirbtc.svg',
+  verified: true,
+};
+
+export const WETH: DexToken = {
+  symbol: 'WETH',
+  name: 'Wrapped Ether',
+  address: WETH_ADDRESS,
+  decimals: 18,
+  chainId: ARC_TESTNET_CHAIN_ID,
+  chainName: 'Arc Testnet',
+  icon: 'W',
+  logo: '/tokens/weth.png',
+  verified: false,
+};
+
+export const DEX_TOKENS: DexToken[] = [USDC, EURC, CIRBTC, WETH];
+
+/** Replace a token's fallback decimals with the value read from the contract. */
+export function withTokenDecimals(token: DexToken, decimals: number): DexToken {
+  return { ...token, decimals };
+}
 
 export type PoolConfig = {
   fee: number;
@@ -262,7 +321,7 @@ export function friendlySwapError(error: unknown): string {
   if (err?.code === 'ACTION_REJECTED' || err?.code === 4001) return 'Transaction rejected in your wallet.';
   const message = err?.info?.error?.message ?? err?.shortMessage ?? err?.message ?? '';
   if (message.includes('CONTRACTS_NOT_READY')) return 'Uniswap v4 contracts are not configured for Arc Testnet yet';
-  if (message.includes('NO_ROUTE')) return 'No Uniswap route for this pair on Arc Testnet.';
+  if (message.includes('NO_ROUTE')) return 'No liquidity for this pair yet';
   if (message.includes('INSUFFICIENT_FUNDS')) return 'Not enough funds to pay for gas.';
   if (/user rejected|denied transaction/i.test(message)) return 'Transaction rejected in your wallet.';
   return message || 'Swap failed. Please try again.';
