@@ -4,23 +4,22 @@ This document describes the repository as it is today. It is documentation only;
 
 ## Current structure
 
-The repository is a single Next.js 14 App Router application that contains three areas with different responsibilities and different wallet stacks.
+The repository is a single Next.js 14 App Router application that contains three areas with different responsibilities and different wallet setups.
 
 ### Terminal
 
 - Entry: `app/page.tsx`, which renders `app/TerminalPage.tsx`.
-- The root layout `app/layout.tsx` mounts `WalletProvider` from `hooks/useWallet.tsx` and imports `app/globals.css`.
+- The root layout `app/layout.tsx` imports `app/globals.css` and mounts `WalletProvider` from `hooks/useWallet.tsx` around every route.
 - The Terminal is a landing page. It links to `/swap` and `/arcgrade`.
-- The legacy wallet context targets Arc mainnet and uses `NEXT_PUBLIC_CHAIN_ID`, defaulting to 5042.
+- The wallet context targets Arc mainnet and uses `NEXT_PUBLIC_CHAIN_ID`, defaulting to 5042.
 
 ### ArcGrade
 
-- Routes: `app/(arcgrade)/arcgrade`, `leaderboard`, `my-score`, `score/[address]`, `challenge`, `deploy` and `api-docs`.
-- Layout: `app/(arcgrade)/layout.tsx` imports RainbowKit's stylesheet and mounts `components/ArcGradeProviders.tsx`.
-- Wallet stack: `lib/arcgradeWagmi.ts` defines a mainnet-only wagmi config using `lib/dexConfig.ts` and `lib/contract.ts` values.
+- Pages: `app/arcgrade`, `app/leaderboard`, `app/my-score`, `app/score/[address]`, `app/challenge`, `app/deploy` and `app/api-docs`.
+- The pages use the same legacy wallet context through `components/Navbar.tsx` and `components/WalletPicker.tsx`. There is no separate wagmi or RainbowKit config for ArcGrade.
 - Server routes: `app/api/analyze`, `app/api/leaderboard` and `app/api/v1/*`.
 - Shared logic: `lib/arcApi.ts` fetches wallet data, `lib/scoring.ts` computes the score, `lib/contract.ts` reads and writes the ArcTrust (ArcGrade) contract, and `lib/api-middleware.ts` provides CORS and rate limiting.
-- UI: `components/Navbar.tsx`, `components/WalletPicker.tsx`, `components/ScoreRing.tsx` and other shared components.
+- UI: `components/Navbar.tsx`, `components/WalletPicker.tsx`, `components/ScoreRing.tsx`, `components/SearchBar.tsx`, `components/StatCard.tsx` and `components/ui/`.
 - The browser extension source lives in `chrome-extension/`; the downloadable archive is `public/arcgrade-extension.zip`.
 
 ### RepDex app
@@ -28,7 +27,7 @@ The repository is a single Next.js 14 App Router application that contains three
 - Routes: `app/(dex)/swap`, `bridge` and `liquidity`.
 - Layout: `app/(dex)/layout.tsx` imports `app/(dex)/app.css` and mounts `app/(dex)/providers.tsx`.
 - Wallet stack: `lib/appWagmi.ts` defines a testnet-only wagmi config for Arc Testnet (5042002).
-- Swap logic: `app/(dex)/DexView.tsx` plus `app/(dex)/lib/abis.ts`, `app/(dex)/lib/bridgeChains.ts`, `app/(dex)/lib/format.ts`, `app/(dex)/hooks/useDexTokens.ts` and `app/(dex)/hooks/useTokenSearch.ts`.
+- Swap logic: `app/(dex)/DexView.tsx` plus `app/(dex)/lib/abis.ts`, `app/(dex)/lib/format.ts` and `app/(dex)/hooks/useTokenSearch.ts`.
 - Chain and token configuration: `lib/appChain.ts` and `lib/dexConfig.testnet.ts`.
 - The bridge and liquidity tabs are UI scaffolds. Their action buttons are disabled.
 
@@ -43,7 +42,7 @@ The repository is a single Next.js 14 App Router application that contains three
 
 - `lib/scoring.ts` is shared by the API routes and the ArcGrade pages.
 - `lib/arcApi.ts` is server-side and talks to Arc mainnet RPC and explorer APIs.
-- `app/api/v1/*` is the public, CORS-enabled API documented in `app/(arcgrade)/api-docs/page.tsx`.
+- `app/api/v1/*` is the public, CORS-enabled API documented in `app/api-docs/page.tsx`.
 
 ## Proposed future structure
 
@@ -66,10 +65,11 @@ components/
 
 Suggested steps:
 
-1. Move shared chain constants and formatting helpers into `lib/shared`.
-2. Group ArcGrade-specific logic under `lib/arcgrade` and RepDex-specific logic under `lib/dex`.
-3. Move area-specific components under matching `components/` subfolders.
-4. Add a `(terminal)` route group if the Terminal gains its own layout.
-5. Keep one wagmi config per area. Do not share a config between Arc mainnet and Arc Testnet.
+1. Move the ArcGrade pages into an `app/(arcgrade)` route group and the Terminal into `app/(terminal)`.
+2. Move shared chain constants and formatting helpers into `lib/shared`.
+3. Group ArcGrade-specific logic under `lib/arcgrade` and RepDex-specific logic under `lib/dex`.
+4. Move area-specific components under matching `components/` subfolders.
+5. Consider a dedicated Arc mainnet wagmi config for ArcGrade if its wallet flow is migrated to RainbowKit.
+6. Keep one wagmi config per area. Do not share a config between Arc mainnet and Arc Testnet.
 
 Any move should be a separate pull request with no behavior changes, and the route table in `README.md` should be updated in the same change.

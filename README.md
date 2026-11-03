@@ -6,7 +6,7 @@ RepDex is a reputation-aware DEX terminal on Arc: check a wallet's on-chain repu
 
 RepDex is the swap, bridge and liquidity application in this repository. It runs against Arc Testnet and uses Uniswap v4 contracts whose addresses are supplied through environment variables. The swap route implements quoting and swap transactions, but no pool is configured in `lib/dexConfig.testnet.ts` yet (`POOLS` is an empty map), so the swap action is disabled for every pair. The bridge and liquidity routes are UI scaffolds with their actions disabled.
 
-ArcGrade is the on-chain reputation module that lives in the same codebase. It scores Arc mainnet wallets from transaction history, writes scores to the ArcTrust (ArcGrade) contract, exposes a public JSON API, and ships the Terminal landing page at `/`.
+ArcGrade is the on-chain reputation module that lives in the same codebase. It scores Arc mainnet wallets from transaction history, exposes a public JSON API, ships the Terminal landing page at `/`, and includes helpers for reading from and writing to the ArcTrust (ArcGrade) score contract.
 
 ## Naming glossary
 
@@ -30,18 +30,17 @@ ArcGrade is the on-chain reputation module that lives in the same codebase. It s
 
 ## Architecture
 
-The root layout mounts the legacy wallet context in `hooks/useWallet.tsx` around every route. The ArcGrade route group and the RepDex route group each mount their own RainbowKit and wagmi stack with a different chain.
+The root layout mounts the legacy wallet context in `hooks/useWallet.tsx` around every route. The Terminal and the ArcGrade pages use that context against Arc mainnet. The RepDex route group mounts its own RainbowKit and wagmi stack against Arc Testnet.
 
 ```mermaid
 flowchart TD
   subgraph Browser
     T["Terminal /"] --> TW["WalletProvider<br/>hooks/useWallet.tsx"]
-    A["ArcGrade pages<br/>/arcgrade, /leaderboard, ..."] --> AW["RainbowKit + wagmi<br/>Arc mainnet 5042"]
+    A["ArcGrade pages<br/>/arcgrade, /leaderboard, ..."] --> TW
     D["RepDex app<br/>/swap, /bridge, /liquidity"] --> DW["RainbowKit + wagmi<br/>Arc Testnet 5042002"]
   end
 
   TW --> MR[("Arc mainnet RPC")]
-  AW --> MR
   DW --> TR[("Arc Testnet RPC")]
   A --> API["Next.js API routes<br/>/api/*"]
   API --> MR
@@ -78,15 +77,6 @@ flowchart TD
 ```text
 .
 ├── app/
-│   ├── (arcgrade)/              ArcGrade pages, Arc mainnet
-│   │   ├── api-docs/
-│   │   ├── arcgrade/
-│   │   ├── challenge/
-│   │   ├── deploy/
-│   │   ├── leaderboard/
-│   │   ├── my-score/
-│   │   ├── score/[address]/
-│   │   └── layout.tsx           Mounts ArcGradeProviders
 │   ├── (dex)/                   RepDex app, Arc Testnet
 │   │   ├── bridge/
 │   │   ├── components/
@@ -101,15 +91,22 @@ flowchart TD
 │   │   ├── layout.tsx           Mounts AppProviders
 │   │   └── providers.tsx
 │   ├── api/                     Server routes for ArcGrade
+│   ├── api-docs/                Public API documentation page
+│   ├── arcgrade/                ArcGrade dashboard
+│   ├── challenge/               Wallet comparison
+│   ├── deploy/                  Simulated deployment flow
+│   ├── leaderboard/
+│   ├── my-score/
+│   ├── score/[address]/
 │   ├── globals.css
-│   ├── layout.tsx               Root layout and metadata
+│   ├── layout.tsx               Root layout, metadata and WalletProvider
 │   ├── page.tsx                 Terminal route
 │   └── TerminalPage.tsx
 ├── chrome-extension/            ArcGrade browser extension source
-├── components/                  Shared UI, Navbar and ArcGradeProviders
+├── components/                  Shared UI: Navbar, WalletPicker, ScoreRing, ui/
 ├── contracts/ArcGrade.sol       ArcTrust / ArcGrade reputation contract
 ├── docs/                        Architecture notes
-├── hooks/useWallet.tsx          Legacy wallet context mounted by the root layout
+├── hooks/useWallet.tsx          Legacy wallet context, Arc mainnet
 ├── lib/                         Chain config, contract helpers, scoring, ABIs
 │   ├── abi/ArcGrade.json        ABI and bytecode used by the deploy script
 │   └── ...
@@ -181,7 +178,7 @@ Every variable prefixed with `NEXT_PUBLIC_` is exposed to the browser. Only `CLA
 | `NEXT_PUBLIC_EXPLORER_URL` | `next.config.js` | Arc mainnet | No | Mainnet explorer URL. |
 | `NEXT_PUBLIC_TESTNET_RPC_URL` | `lib/dexConfig.testnet.ts` | Arc Testnet | No, defaults to `https://rpc.testnet.arc.network` | Testnet RPC endpoint. |
 | `NEXT_PUBLIC_TESTNET_EXPLORER_URL` | `lib/dexConfig.testnet.ts` | Arc Testnet | No, defaults to `https://testnet.arcscan.app` | Testnet explorer URL. |
-| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | `lib/appWagmi.ts`, `lib/arcgradeWagmi.ts` | Both | No | WalletConnect project ID. Without it the WalletConnect option is hidden. |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | `lib/appWagmi.ts` | Arc Testnet | No | WalletConnect project ID. Without it the WalletConnect option is hidden. |
 | `NEXT_PUBLIC_UNIV4_POOL_MANAGER` | `lib/dexConfig.testnet.ts` | Arc Testnet | For swaps | Uniswap v4 PoolManager address. |
 | `NEXT_PUBLIC_UNIV4_POSITION_MANAGER` | `lib/dexConfig.testnet.ts` | Arc Testnet | For swaps | Uniswap v4 PositionManager address. |
 | `NEXT_PUBLIC_UNIV4_UNIVERSAL_ROUTER` | `lib/dexConfig.testnet.ts` | Arc Testnet | For swaps | Universal Router address. |
