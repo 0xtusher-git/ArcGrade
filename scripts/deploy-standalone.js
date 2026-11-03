@@ -18,7 +18,7 @@ async function main() {
 
   console.log("Deploying ArcGrade with account:", wallet.address);
 
-  const artifact = JSON.parse(fs.readFileSync("./artifacts/contracts/ArcGrade.sol/ArcGrade.json", "utf8"));
+  const artifact = JSON.parse(fs.readFileSync("./lib/abi/ArcGrade.json", "utf8"));
   const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
 
   const contract = await factory.deploy();
