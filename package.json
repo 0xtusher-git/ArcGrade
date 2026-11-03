@@ -1,6 +1,7 @@
 {
-  "name": "arcgrade",
+  "name": "repdex",
   "version": "0.1.0",
+  "description": "Reputation-aware DEX terminal and on-chain reputation module on Arc.",
   "private": true,
   "type": "module",
   "scripts": {
