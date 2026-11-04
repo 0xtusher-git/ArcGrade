@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { appConfig } from '@/lib/appWagmi';
+import { ConnectButtonStateProvider } from './hooks/useConnectButtonState';
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -32,7 +33,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           })}
           modalSize="wide"
         >
-          {children}
+          <ConnectButtonStateProvider>{children}</ConnectButtonStateProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
