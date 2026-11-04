@@ -6,12 +6,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { MagnifyingGlass, X } from '@phosphor-icons/react';
 import { RefreshCw, Wallet } from 'lucide-react';
-import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { useAccount, useDisconnect, usePublicClient, useSwitchChain } from 'wagmi';
 import { arcTestnet } from '@/lib/appChain';
 import { ARC_EXPLORER_URL, type DexToken } from '@/lib/dexConfig.testnet';
 import { useTokenSearch } from './hooks/useTokenSearch';
 import { useDexTokens } from './hooks/useDexTokens';
+import { useConnectButtonState } from './hooks/useConnectButtonState';
 import { FlowHoverButton } from '@/components/ui/flow-hover-button';
 import { AccountMenu } from './components/AccountMenu';
 import { SearchResults } from './components/SearchResults';
@@ -25,9 +25,9 @@ const NAV_ITEMS = [
 export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
-  const { address, isConnected, isConnecting, chainId } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const isCorrectNetwork = chainId === arcTestnet.id;
-  const { openConnectModal } = useConnectModal();
+  const { isConnectPending, openConnect } = useConnectButtonState();
   const { disconnect } = useDisconnect();
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
   const publicClient = usePublicClient();
@@ -133,14 +133,14 @@ export function AppHeader() {
   const walletButton = !isConnected ? (
     <FlowHoverButton
       type="button"
-      onClick={() => openConnectModal?.()}
+      onClick={openConnect}
       icon={<Wallet size={16} aria-hidden="true" />}
       hideLabelOnMobile
-      loading={isConnecting}
-      aria-label={isConnecting ? 'Connecting wallet' : 'Connect wallet'}
+      loading={isConnectPending}
+      aria-label={isConnectPending ? 'Connecting wallet' : 'Connect wallet'}
       className="min-h-10 min-w-10 rounded-[10px] px-2.5 py-2 sm:px-3"
     >
-      {isConnecting ? 'Connecting...' : 'Connect wallet'}
+      {isConnectPending ? 'Connecting...' : 'Connect wallet'}
     </FlowHoverButton>
   ) : !isCorrectNetwork ? (
     <FlowHoverButton

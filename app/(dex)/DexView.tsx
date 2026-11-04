@@ -10,7 +10,6 @@ import {
   Warning,
 } from '@phosphor-icons/react';
 import { RefreshCw, Wallet } from 'lucide-react';
-import { useConnectModal } from '@rainbow-me/rainbowkit';
 import {
   useAccount,
   usePublicClient,
@@ -49,6 +48,7 @@ import { fiatValue } from './lib/format';
 import { SelectTokenModal, type TokenPickerMode } from './components/SelectTokenModal';
 import { TokenIcon } from './components/TokenIcon';
 import { useDexTokens } from './hooks/useDexTokens';
+import { useConnectButtonState } from './hooks/useConnectButtonState';
 
 type Quote = { amountOut: bigint; tokenIn: DexToken; tokenOut: DexToken; amountIn: bigint };
 type TxStatus = 'idle' | 'approving-token' | 'approving-permit2' | 'swapping' | 'success' | 'error';
@@ -261,9 +261,9 @@ function SettingsPopover({
 }
 
 export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string }) {
-  const { address, isConnected, isConnecting, chainId } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const isCorrectNetwork = chainId === arcTestnet.id;
-  const { openConnectModal } = useConnectModal();
+  const { isConnectPending, openConnect } = useConnectButtonState();
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
@@ -648,10 +648,10 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
 
   const walletFlowState = !isConnected ? 'connect' : !isCorrectNetwork ? 'switch' : null;
   const walletFlowLoading =
-    walletFlowState === 'connect' ? isConnecting : walletFlowState === 'switch' ? isSwitchingChain : false;
+    walletFlowState === 'connect' ? isConnectPending : walletFlowState === 'switch' ? isSwitchingChain : false;
   const walletFlowLabel =
     walletFlowState === 'connect'
-      ? isConnecting
+      ? isConnectPending
         ? 'Connecting...'
         : 'Connect wallet'
       : walletFlowState === 'switch'
@@ -673,7 +673,7 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
 
   if (!isConnected) {
     actionLabel = 'Connect wallet';
-    actionHandler = () => openConnectModal?.();
+    actionHandler = openConnect;
   } else if (!isCorrectNetwork) {
     actionLabel = 'Switch to Arc Testnet';
     actionHandler = () => {
@@ -1044,7 +1044,7 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
                       type="button"
                       onClick={
                         walletFlowState === 'connect'
-                          ? () => openConnectModal?.()
+                          ? openConnect
                           : () => void switchChainAsync({ chainId: arcTestnet.id })
                       }
                       fullWidth
@@ -1136,7 +1136,7 @@ export function DexView({ tab, initialBuy }: { tab: DexTab; initialBuy?: string 
                       type="button"
                       onClick={
                         walletFlowState === 'connect'
-                          ? () => openConnectModal?.()
+                          ? openConnect
                           : () => void switchChainAsync({ chainId: arcTestnet.id })
                       }
                       fullWidth
