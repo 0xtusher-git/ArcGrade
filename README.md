@@ -26,21 +26,24 @@ ArcGrade is the on-chain reputation module that lives in the same codebase. It s
 | RepDex liquidity | `/liquidity` | Arc Testnet (5042002) | UI scaffold. The action button is disabled and the page states that liquidity is not live. |
 | ArcGrade Terminal | `/` | Arc mainnet (5042) | Landing page with links to the app and ArcGrade. |
 | ArcGrade app | `/arcgrade`, `/leaderboard`, `/my-score`, `/score/[address]`, `/challenge`, `/deploy`, `/api-docs` | Arc mainnet (5042) | Functional. The leaderboard is seeded with a fixed list of demo addresses in `app/api/leaderboard/route.ts`. `/deploy` simulates compilation and deploys fixed demo bytecode. |
-| ArcGrade API | `/api/analyze`, `/api/leaderboard`, `/api/v1/*` | Arc mainnet (5042) | Functional. See `app/api-docs/page.tsx` for the documented v1 endpoints. |
+| ArcGrade API | `/api/analyze`, `/api/leaderboard`, `/api/v1/*` | Arc mainnet (5042) | Functional. See `app/(arcgrade)/api-docs/page.tsx` for the documented v1 endpoints. |
 
 ## Architecture
 
-The root layout mounts the legacy wallet context in `hooks/useWallet.tsx` around every route. The Terminal and the ArcGrade pages use that context against Arc mainnet. The RepDex route group mounts its own RainbowKit and wagmi stack against Arc Testnet.
+`app/layout.tsx` is the single root layout. It loads `app/globals.css`, sets the site metadata, and mounts the legacy wallet context from `hooks/useWallet.tsx` around every route; no current page reads that context. The application is split into two App Router route groups, each with its own wallet stack:
+
+- `app/(arcgrade)` mounts `ArcGradeProviders` and talks to Arc mainnet (5042) through `lib/arcgradeWagmi.ts`.
+- `app/(dex)` mounts `AppProviders` and talks to Arc Testnet (5042002) through `lib/appWagmi.ts`.
 
 ```mermaid
 flowchart TD
   subgraph Browser
-    T["Terminal /"] --> TW["WalletProvider<br/>hooks/useWallet.tsx"]
-    A["ArcGrade pages<br/>/arcgrade, /leaderboard, ..."] --> TW
-    D["RepDex app<br/>/swap, /bridge, /liquidity"] --> DW["RainbowKit + wagmi<br/>Arc Testnet 5042002"]
+    T["Terminal /"]
+    A["ArcGrade pages<br/>app/(arcgrade)"] --> AW["ArcGradeProviders<br/>RainbowKit + wagmi<br/>Arc mainnet 5042"]
+    D["RepDex app<br/>app/(dex)"] --> DW["AppProviders<br/>RainbowKit + wagmi<br/>Arc Testnet 5042002"]
   end
 
-  TW --> MR[("Arc mainnet RPC")]
+  AW --> MR[("Arc mainnet RPC")]
   DW --> TR[("Arc Testnet RPC")]
   A --> API["Next.js API routes<br/>/api/*"]
   API --> MR
@@ -77,6 +80,15 @@ flowchart TD
 ```text
 .
 ├── app/
+│   ├── (arcgrade)/              ArcGrade app, Arc mainnet
+│   │   ├── api-docs/
+│   │   ├── arcgrade/
+│   │   ├── challenge/
+│   │   ├── deploy/
+│   │   ├── leaderboard/
+│   │   ├── my-score/
+│   │   ├── score/[address]/
+│   │   └── layout.tsx           Mounts ArcGradeProviders
 │   ├── (dex)/                   RepDex app, Arc Testnet
 │   │   ├── bridge/
 │   │   ├── components/
@@ -91,26 +103,23 @@ flowchart TD
 │   │   ├── layout.tsx           Mounts AppProviders
 │   │   └── providers.tsx
 │   ├── api/                     Server routes for ArcGrade
-│   ├── api-docs/                Public API documentation page
-│   ├── arcgrade/                ArcGrade dashboard
-│   ├── challenge/               Wallet comparison
-│   ├── deploy/                  Simulated deployment flow
-│   ├── leaderboard/
-│   ├── my-score/
-│   ├── score/[address]/
 │   ├── globals.css
-│   ├── layout.tsx               Root layout, metadata and WalletProvider
+│   ├── layout.tsx               Root layout, metadata and legacy WalletProvider
 │   ├── page.tsx                 Terminal route
 │   └── TerminalPage.tsx
 ├── chrome-extension/            ArcGrade browser extension source
-├── components/                  Shared UI: Navbar, WalletPicker, ScoreRing, ui/
+├── components/                  Navbar, ArcGradeProviders, ScoreRing, ui/
 ├── contracts/ArcGrade.sol       ArcTrust / ArcGrade reputation contract
-├── docs/                        Architecture notes
-├── hooks/useWallet.tsx          Legacy wallet context, Arc mainnet
-├── lib/                         Chain config, contract helpers, scoring, ABIs
+├── docs/                        Architecture notes and brand sources
+├── hooks/                       useArcGradeWallet.tsx, legacy useWallet.tsx
+├── lib/                         Chain config, wallet config, contract helpers, scoring
 │   ├── abi/ArcGrade.json        ABI and bytecode used by the deploy script
+│   ├── appChain.ts              Arc Testnet chain definition
+│   ├── appWagmi.ts              RepDex wagmi config (Arc Testnet)
+│   ├── arcgradeWagmi.ts         ArcGrade wagmi config (Arc mainnet)
+│   ├── dexConfig.testnet.ts     Testnet tokens, pools and swap helpers
 │   └── ...
-├── public/                      Static assets, including the extension zip
+├── public/                      Static assets, token and chain logos, extension zip
 ├── scripts/                     Standalone and Hardhat deploy scripts
 ├── types/                       Global type declarations
 ├── .github/                     CI and pull request template

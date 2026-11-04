@@ -2,24 +2,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { useWallet } from '@/hooks/useWallet';
+import { useArcGradeWallet } from '@/hooks/useArcGradeWallet';
 import { shortenAddress } from '@/lib/scoring';
 import { PuzzlePiece, X, List, SignOut, Wallet, CircleNotch } from '@phosphor-icons/react';
-import WalletPicker from '@/components/WalletPicker';
-import type { DetectedWallet } from '@/lib/walletProviders';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { address, isConnected, isConnecting, connectWith, disconnect } = useWallet();
+  const { address, isConnected, isConnecting, connect, disconnect } = useArcGradeWallet();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showWalletPicker, setShowWalletPicker] = useState(false);
-
-  const handlePick = (wallet: DetectedWallet) => {
-    connectWith(wallet.provider).then((ok) => {
-      if (ok) setShowWalletPicker(false);
-    });
-  };
 
   const links = [
     { href: '/arcgrade', label: 'Home' },
@@ -73,14 +64,14 @@ export default function Navbar() {
                 {shortenAddress(address!)}
               </span>
               <button
-                onClick={disconnect}
+                onClick={() => disconnect()}
                 className="flex items-center gap-1.5 text-[13px] font-medium text-slate-400 transition-colors hover:text-white"
               >
                 <SignOut size={15} /> Disconnect
               </button>
             </>
           ) : (
-            <button onClick={() => setShowWalletPicker(true)} className="btn-primary" id="navbar-connect-btn">
+            <button onClick={connect} className="btn-primary" id="navbar-connect-btn">
               {isConnecting ? (
                 <>
                   <CircleNotch size={16} weight="bold" className="animate-spin" /> Connecting…
@@ -137,7 +128,7 @@ export default function Navbar() {
                 <SignOut size={16} /> Disconnect ({shortenAddress(address!)})
               </button>
             ) : (
-              <button onClick={() => { setMenuOpen(false); setShowWalletPicker(true); }} className="btn-primary w-full">
+              <button onClick={() => { setMenuOpen(false); connect(); }} className="btn-primary w-full">
                 <Wallet size={16} weight="bold" /> Connect
               </button>
             )}
@@ -226,12 +217,6 @@ export default function Navbar() {
         </div>
       )}
 
-      <WalletPicker
-        open={showWalletPicker}
-        connecting={isConnecting}
-        onClose={() => setShowWalletPicker(false)}
-        onPick={handlePick}
-      />
     </nav>
   );
 }

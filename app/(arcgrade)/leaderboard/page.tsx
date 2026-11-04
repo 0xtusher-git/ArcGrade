@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import { useWallet } from '@/hooks/useWallet';
+import { useArcGradeWallet } from '@/hooks/useArcGradeWallet';
 import { getBadge, shortenAddress, getScoreColor } from '@/lib/scoring';
 import { Trophy, Medal, Warning, ArrowRight, CircleNotch } from '@phosphor-icons/react';
 
@@ -20,7 +20,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [userRank, setUserRank] = useState<number | null>(null);
-  const { address } = useWallet();
+  const { address } = useArcGradeWallet();
 
   useEffect(() => {
     const url = address ? `/api/leaderboard?address=${address}` : '/api/leaderboard';

@@ -276,6 +276,60 @@
   opacity: 0.9;
 }
 
+/* Locally hosted issuer logos: circular crop with a subtle 1px border. These
+   selectors are intentionally unscoped because the token modal is portaled to
+   document.body, outside the .app-route wrapper. The class names are unique to
+   the swap app. */
+.app-token-logo,
+.app-token-fallback {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.app-token-logo {
+  object-fit: contain;
+  overflow: hidden;
+}
+
+.app-token-fallback {
+  color: white;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Chain badge/logo shared by the picker rows, From/To fields and token icons. */
+.app-chain-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.app-chain-logo {
+  border-radius: 9999px;
+  object-fit: contain;
+}
+
+.app-chain-fallback {
+  display: inline-flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  line-height: 1;
+}
+
 .app-route .app-amount-input,
 .app-route .app-amount-display {
   flex: 1 1 auto;
@@ -477,6 +531,44 @@
 @media (min-width: 640px) {
   .app-modal-panel {
     border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* Swap/Liquidity picker: one narrow column; a bottom sheet on phones. */
+@media (min-width: 640px) {
+  .app-modal-panel.app-modal-panel-narrow {
+    width: 460px;
+    max-width: 460px;
+  }
+}
+
+@media (max-width: 639px) {
+  .app-modal-panel.app-modal-panel-narrow {
+    max-height: 85vh;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+  }
+}
+
+/* Bridge picker on phones: chain chips scroll horizontally above the tokens. */
+.app-chain-chips {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+}
+
+.app-chain-chips::-webkit-scrollbar {
+  display: none;
+}
+
+/* The mobile chip row must never leak into the desktop two-column picker.
+   `!important` beats the Tailwind `sm:hidden` utility regardless of the
+   stylesheet order, so only the scrollable chain list shows at >=640px. */
+@media (min-width: 640px) {
+  .app-chain-chips {
+    display: none !important;
   }
 }
 

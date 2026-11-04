@@ -1,13 +1,16 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import localFont from 'next/font/local';
 import './app.css';
 import { AppHeader } from './AppHeader';
 import { ImportedTokensProvider } from './imported-tokens';
 import { AppProviders } from './providers';
 
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '700'],
+// Self-hosted so the build never fetches a font from Google. The file comes
+// from the official Inter v4.1 release; source URL, date, and checksum are in
+// ./fonts/FONTS.md.
+const inter = localFont({
+  src: './fonts/InterVariable.woff2',
+  weight: '100 900',
   display: 'swap',
   variable: '--font-inter',
 });

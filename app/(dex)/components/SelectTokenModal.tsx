@@ -2,26 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, CircleNotch, MagnifyingGlass, Star, Warning, X } from '@phosphor-icons/react';
-import { sepolia } from 'viem/chains';
+import { Check, CheckCircle, CircleNotch, MagnifyingGlass, Star, X } from '@phosphor-icons/react';
 import type { PublicClient } from 'viem';
-import { arcTestnet } from '@/lib/appChain';
 import { formatAmount, isTokenDeployed, type DexToken } from '@/lib/dexConfig.testnet';
 import { ERC20_ABI } from '../lib/abis';
+import type { BridgeChain } from '../lib/bridgeChains';
 import { shortAddress } from '../lib/format';
-import { useTokenSearch, type ImportCandidate } from '../hooks/useTokenSearch';
+import { useTokenSearch } from '../hooks/useTokenSearch';
 import { ChainIcon, TokenIcon } from './TokenIcon';
 
 export type TokenPickerMode = 'swap' | 'bridge' | 'liquidity';
 
-type ChainOption = { id: number; name: string; key: 'arc' | 'sepolia' };
 type Balances = Record<string, bigint>;
 
-const ALL_CHAINS = 0;
 const STARRED_KEY = 'repdex-app:starred-chains';
-
-const ARC_CHAIN: ChainOption = { id: arcTestnet.id, name: 'Arc Testnet', key: 'arc' };
-const SEPOLIA_CHAIN: ChainOption = { id: sepolia.id, name: 'Ethereum Sepolia', key: 'sepolia' };
 
 export function SelectTokenModal({
   open,
@@ -31,9 +25,13 @@ export function SelectTokenModal({
   explorerUrl,
   publicClient,
   address,
+  bridgeChains = [],
+  selectedChainId = null,
+  chainSide = null,
+  inUseToken = null,
   onClose,
   onSelect,
-  onImport,
+  onChainSelect,
 }: {
   open: boolean;
   mode: TokenPickerMode;
@@ -42,9 +40,17 @@ export function SelectTokenModal({
   explorerUrl: string;
   publicClient?: PublicClient;
   address?: `0x${string}`;
+  /** Chain list for bridge mode only. Empty in swap/liquidity mode. */
+  bridgeChains?: BridgeChain[];
+  /** Active chain for bridge mode only. */
+  selectedChainId?: number | null;
+  /** Which bridge field opened the picker, used for the title. */
+  chainSide?: 'from' | 'to' | null;
+  /** Token already selected on the opposite side of the pair (swap/liquidity). */
+  inUseToken?: DexToken | null;
   onClose: () => void;
   onSelect: (token: DexToken) => void;
-  onImport: (candidate: ImportCandidate) => void;
+  onChainSelect?: (chainId: number) => void;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -54,14 +60,10 @@ export function SelectTokenModal({
   const [mounted, setMounted] = useState(false);
   const [chainQuery, setChainQuery] = useState('');
   const [tokenQuery, setTokenQuery] = useState('');
-  const [selectedChainId, setSelectedChainId] = useState<number>(ALL_CHAINS);
   const [starred, setStarred] = useState<number[]>([]);
   const [balances, setBalances] = useState<Balances>({});
 
-  const chains = useMemo(
-    () => (mode === 'bridge' ? [ARC_CHAIN, SEPOLIA_CHAIN] : [ARC_CHAIN]),
-    [mode]
-  );
+  const isBridge = mode === 'bridge';
 
   useEffect(() => setMounted(true), []);
 
@@ -69,7 +71,7 @@ export function SelectTokenModal({
     if (!open) return;
     setChainQuery('');
     setTokenQuery('');
-    setSelectedChainId(ALL_CHAINS);
+    if (!isBridge) return;
     try {
       const raw = window.localStorage.getItem(STARRED_KEY);
       const parsed = raw ? (JSON.parse(raw) as unknown) : [];
@@ -79,7 +81,7 @@ export function SelectTokenModal({
     } catch {
       setStarred([]);
     }
-  }, [open]);
+  }, [open, isBridge]);
 
   // Body scroll lock + focus trap + focus restore.
   useEffect(() => {
@@ -172,19 +174,19 @@ export function SelectTokenModal({
     });
   };
 
-  const visibleTokens = useMemo(
-    () => tokens.filter((token) => selectedChainId === ALL_CHAINS || token.chainId === selectedChainId),
-    [tokens, selectedChainId]
-  );
+  const visibleTokens = useMemo(() => {
+    if (!isBridge || selectedChainId === null) return tokens;
+    return tokens.filter((token) => token.chainId === undefined || token.chainId === selectedChainId);
+  }, [isBridge, tokens, selectedChainId]);
 
   const search = useTokenSearch({
     query: tokenQuery,
     tokens: visibleTokens,
-    publicClient,
     explorerUrl,
     enabled: open,
   });
 
+  const chains = isBridge ? bridgeChains : [];
   const chainFilter = chainQuery.trim().toLowerCase();
   const sortedChains = useMemo(
     () => chains.slice().sort((a, b) => a.name.localeCompare(b.name)),
@@ -195,7 +197,13 @@ export function SelectTokenModal({
 
   if (!mounted || !open) return null;
 
-  const chainRow = (chain: ChainOption) => {
+  const title = isBridge
+    ? chainSide === 'to'
+      ? 'Select destination chain'
+      : 'Select source chain'
+    : 'Select token';
+
+  const chainRow = (chain: BridgeChain) => {
     const active = selectedChainId === chain.id;
     const isStarred = starred.includes(chain.id);
     return (
@@ -207,11 +215,11 @@ export function SelectTokenModal({
       >
         <button
           type="button"
-          onClick={() => setSelectedChainId(chain.id)}
+          onClick={() => onChainSelect?.(chain.id)}
           aria-pressed={active}
           className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-neutral-300"
         >
-          <ChainIcon name={chain.name} glyph={chain.key === 'arc' ? 'A' : 'S'} />
+          <ChainIcon name={chain.name} logo={chain.logo} glyph={chain.glyph} />
           <span className="truncate">{chain.name}</span>
         </button>
         <button
@@ -234,7 +242,9 @@ export function SelectTokenModal({
 
   return createPortal(
     <div
-      className="app-modal-backdrop fixed inset-0 z-[100] flex items-stretch justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-6"
+      className={`app-modal-backdrop fixed inset-0 z-[100] flex justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-6 ${
+        isBridge ? 'items-stretch' : 'items-end'
+      }`}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -245,11 +255,13 @@ export function SelectTokenModal({
         aria-modal="true"
         aria-labelledby="select-token-title"
         tabIndex={-1}
-        className="app-modal-panel flex h-full w-full flex-col overflow-hidden bg-neutral-950 outline-none sm:h-auto sm:max-h-[640px] sm:max-w-3xl sm:rounded-2xl sm:border sm:border-white/10 sm:shadow-2xl"
+        className={`app-modal-panel flex w-full flex-col overflow-hidden bg-neutral-950 outline-none sm:h-auto sm:max-h-[640px] sm:rounded-2xl sm:border sm:border-white/10 sm:shadow-2xl ${
+          isBridge ? 'h-full sm:max-w-3xl' : 'app-modal-panel-narrow max-h-[85vh] rounded-t-2xl'
+        }`}
       >
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-3.5">
           <h2 id="select-token-title" className="text-base font-semibold text-white">
-            Select token
+            {title}
           </h2>
           <button
             ref={closeRef}
@@ -262,87 +274,77 @@ export function SelectTokenModal({
           </button>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
-          <aside className="border-b border-white/10 p-3 sm:w-56 sm:overflow-y-auto sm:border-b-0 sm:border-r">
-            <div className="hidden sm:block">
-              <label className="relative block">
-                <span className="sr-only">Search chains</span>
-                <MagnifyingGlass
-                  size={15}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500"
-                  aria-hidden="true"
-                />
-                <input
-                  value={chainQuery}
-                  onChange={(event) => setChainQuery(event.target.value)}
-                  placeholder="Search chains"
-                  className="w-full rounded-lg border border-white/10 bg-neutral-900 py-1.5 pl-8 pr-2 text-xs text-white outline-none placeholder:text-neutral-600 focus:border-white/25"
-                />
-              </label>
-            </div>
+        <div className={`flex min-h-0 flex-1 flex-col ${isBridge ? 'sm:flex-row' : ''}`}>
+          {isBridge && (
+            <aside className="border-b border-white/10 p-3 sm:flex sm:w-56 sm:flex-col sm:overflow-hidden sm:border-b-0 sm:border-r">
+              <div className="hidden sm:block">
+                <label className="relative block">
+                  <span className="sr-only">Search chains</span>
+                  <MagnifyingGlass
+                    size={15}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500"
+                    aria-hidden="true"
+                  />
+                  <input
+                    value={chainQuery}
+                    onChange={(event) => setChainQuery(event.target.value)}
+                    placeholder="Search chains"
+                    className="w-full rounded-lg border border-white/10 bg-neutral-900 py-1.5 pl-8 pr-2 text-xs text-white outline-none placeholder:text-neutral-600 focus:border-white/25"
+                  />
+                </label>
+              </div>
 
-            {/* Mobile: horizontal chain chips */}
-            <div className="flex gap-2 overflow-x-auto pb-1 sm:hidden">
-              <button
-                type="button"
-                onClick={() => setSelectedChainId(ALL_CHAINS)}
-                aria-pressed={selectedChainId === ALL_CHAINS}
-                className={`app-btn-compact shrink-0 px-3 py-1.5 text-xs ${
-                  selectedChainId === ALL_CHAINS ? 'border-white/30 bg-white/10' : ''
-                }`}
-              >
-                All chains
-              </button>
-              {sortedChains.map((chain) => (
-                <button
-                  key={chain.id}
-                  type="button"
-                  onClick={() => setSelectedChainId(chain.id)}
-                  aria-pressed={selectedChainId === chain.id}
-                  className={`app-btn-compact shrink-0 gap-2 px-3 py-1.5 text-xs ${
-                    selectedChainId === chain.id ? 'border-white/30 bg-white/10' : ''
-                  }`}
-                >
-                  <ChainIcon name={chain.name} glyph={chain.key === 'arc' ? 'A' : 'S'} size={16} />
-                  {chain.name}
-                </button>
-              ))}
-            </div>
+              {/* Desktop: one scrollable list (starred chains sit at the top). */}
+              <div className="hidden min-h-0 sm:mt-3 sm:block sm:flex-1 sm:overflow-y-auto">
+                {starredChains.length > 0 && (
+                  <>
+                    <h3 className="px-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                      Starred chains
+                    </h3>
+                    <div className="mt-1 space-y-0.5">{starredChains.map(chainRow)}</div>
+                  </>
+                )}
 
-            <div className="mt-2 hidden sm:block">
-              <button
-                type="button"
-                onClick={() => setSelectedChainId(ALL_CHAINS)}
-                aria-pressed={selectedChainId === ALL_CHAINS}
-                className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-neutral-300 transition-colors ${
-                  selectedChainId === ALL_CHAINS ? 'bg-white/[0.06]' : 'hover:bg-white/[0.03]'
-                }`}
-              >
-                <ChainIcon name="All chains" glyph="∞" />
-                <span>All chains</span>
-              </button>
+                <h3 className="mt-3 px-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                  Chains A-Z
+                </h3>
+                <div className="mt-1 space-y-0.5">
+                  {matchingChains.length === 0 ? (
+                    <p className="px-2 py-2 text-xs text-neutral-500">No chains found</p>
+                  ) : (
+                    matchingChains.map(chainRow)
+                  )}
+                </div>
+              </div>
 
-              {starredChains.length > 0 && (
-                <>
-                  <h3 className="mt-3 px-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-                    Starred chains
-                  </h3>
-                  <div className="mt-1 space-y-0.5">{starredChains.map(chainRow)}</div>
-                </>
-              )}
-
-              <h3 className="mt-3 px-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-                Chains A-Z
-              </h3>
-              <div className="mt-1 space-y-0.5">
+              {/* Mobile: horizontally scrollable chain chips above the token list. */}
+              <div className="app-chain-chips sm:hidden">
                 {matchingChains.length === 0 ? (
-                  <p className="px-2 py-2 text-xs text-neutral-500">No chains found</p>
+                  <p className="px-1 py-1.5 text-xs text-neutral-500">No chains found</p>
                 ) : (
-                  matchingChains.map(chainRow)
+                  matchingChains.map((chain) => (
+                    <button
+                      key={chain.id}
+                      type="button"
+                      onClick={() => onChainSelect?.(chain.id)}
+                      aria-pressed={selectedChainId === chain.id}
+                      className={`app-btn-compact shrink-0 gap-2 px-3 py-1.5 text-xs ${
+                        selectedChainId === chain.id ? 'border-white/30 bg-white/10' : ''
+                      }`}
+                    >
+                      <ChainIcon
+                        name={chain.name}
+                        logo={chain.logo}
+                        glyph={chain.glyph}
+                        size={16}
+                      />
+                      {chain.name}
+                    </button>
+                  ))
                 )}
               </div>
-            </div>
-          </aside>
+            </aside>
+          )}
 
           <section className="flex min-h-0 flex-1 flex-col p-3 sm:p-4">
             <label className="relative block">
@@ -372,8 +374,14 @@ export function SelectTokenModal({
                 </div>
               )}
 
-              {!search.loading && search.results.length === 0 && !search.candidate && !search.explorer && (
+              {!search.loading && search.results.length === 0 && !search.unsupported && !search.explorer && (
                 <p className="px-2 py-6 text-sm text-neutral-500">No results</p>
+              )}
+
+              {!search.loading && search.unsupported && (
+                <p className="px-2 py-6 text-sm text-neutral-400">
+                  This token isn&apos;t supported on Arc Testnet
+                </p>
               )}
 
               {!search.loading &&
@@ -381,13 +389,32 @@ export function SelectTokenModal({
                   const deployed = isTokenDeployed(token);
                   const selected =
                     selectedToken !== null &&
-                    selectedToken.address.toLowerCase() === token.address.toLowerCase();
+                    selectedToken.address.toLowerCase() === token.address.toLowerCase() &&
+                    (selectedToken.chainId ?? null) === (token.chainId ?? null);
+                  const inUse =
+                    !isBridge &&
+                    inUseToken !== null &&
+                    inUseToken.address.toLowerCase() === token.address.toLowerCase() &&
+                    (inUseToken.chainId ?? null) === (token.chainId ?? null);
                   const balance = balances[token.address.toLowerCase()];
+                  const chain = isBridge
+                    ? bridgeChains.find((item) => item.id === token.chainId)
+                    : undefined;
+                  // Swap/liquidity rows never invent an address: an undeployed
+                  // token stays visible but disabled with this exact label.
+                  const subtitle = isBridge
+                    ? `${token.chainName ?? chain?.name ?? ''}${
+                        deployed ? ` · ${shortAddress(token.address)}` : ''
+                      }`
+                    : deployed
+                      ? shortAddress(token.address)
+                      : 'Address not set';
+
                   return (
                     <button
-                      key={`${token.chainId ?? 'arc'}-${token.address}`}
+                      key={`${token.chainId ?? 'arc'}-${token.address}-${token.symbol}`}
                       type="button"
-                      disabled={!deployed}
+                      disabled={!isBridge && !deployed}
                       onClick={() => onSelect(token)}
                       className={`flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-45 ${
                         selected ? 'bg-white/[0.06]' : ''
@@ -396,46 +423,40 @@ export function SelectTokenModal({
                       <TokenIcon
                         symbol={token.symbol}
                         glyph={token.icon}
-                        chain={token.chainId === sepolia.id ? 'sepolia' : 'arc'}
+                        logo={token.logo}
+                        chain={isBridge ? (chain ?? null) : null}
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold text-white">{token.symbol}</span>
-                        <span className="block truncate text-xs text-neutral-500">
-                          {token.chainName ?? 'Arc Testnet'} ·{' '}
-                          {deployed ? shortAddress(token.address) : 'Not deployed yet'}
+                        <span className="flex items-center gap-1">
+                          <span className="block text-sm font-semibold text-white">{token.symbol}</span>
+                          {token.verified && (
+                            <CheckCircle
+                              size={14}
+                              weight="fill"
+                              className="shrink-0 text-[var(--app-accent)]"
+                              aria-label="Verified"
+                            />
+                          )}
                         </span>
+                        <span className="block truncate text-xs text-neutral-500">{subtitle}</span>
                       </span>
-                      {address && deployed && balance !== undefined && (
-                        <span className="shrink-0 text-xs text-neutral-400">
-                          {formatAmount(balance, token.decimals, 4)}
-                        </span>
+                      {inUse ? (
+                        <span className="shrink-0 text-xs text-neutral-400">In use</span>
+                      ) : (
+                        address &&
+                        deployed &&
+                        balance !== undefined && (
+                          <span className="shrink-0 text-xs text-neutral-400">
+                            {formatAmount(balance, token.decimals, 4)}
+                          </span>
+                        )
                       )}
-                      {selected && (
+                      {selected && !inUse && (
                         <Check size={16} weight="bold" className="shrink-0 text-[var(--app-accent)]" aria-hidden="true" />
                       )}
                     </button>
                   );
                 })}
-
-              {!search.loading && search.candidate && (
-                <div className="mx-1 mt-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
-                  <div className="flex items-start gap-2 text-xs leading-relaxed text-amber-200">
-                    <Warning size={16} weight="bold" className="mt-0.5 shrink-0" aria-hidden="true" />
-                    <span>
-                      <strong className="font-semibold">Unverified token.</strong>{' '}
-                      {search.candidate.symbol} ({shortAddress(search.candidate.address)}) is not in
-                      the RepDex list. Verify the contract address before trading.
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onImport(search.candidate as ImportCandidate)}
-                    className="app-btn-compact mt-2 px-3 py-1 text-xs"
-                  >
-                    Import &amp; select
-                  </button>
-                </div>
-              )}
 
               {!search.loading && search.explorer && (
                 <a
